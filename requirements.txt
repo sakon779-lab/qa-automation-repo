@@ -8,7 +8,6 @@ requests                   # Library พื้นฐานของ Python
 # --- Data & Utilities ---
 robotframework-jsonlibrary # ช่วยแกะ JSON Response ได้ง่ายมาก
 robotframework-faker       # สำคัญมาก! สำหรับ Gen ข้อมูลปลอม (Random Data) เพื่อทำ Isolation
-robotframework-stringlibrary # (Built-in มักจะมาพร้อม Core แต่ใส่ไว้กันลืม)
 
 # --- Database (Optional: เปิดใช้เมื่อต้องการต่อ DB จริง) ---
 robotframework-databaselibrary
