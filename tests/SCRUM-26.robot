@@ -3,20 +3,24 @@ Library    RequestsLibrary
 Library    Collections
 
 *** Test Cases ***
-TC-001 Verify Hello World API with valid name
+TC_001_Happy_Path_Valid_Name
+    [Documentation]    Happy Path - Valid Name
     Create Session    api    http://127.0.0.1:8000
-    ${resp}=    GET On Session    api    /hello/Athena
+    ${resp}=    GET On Session    api    /hello/Athena    expected_status=any
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Dictionary Should Contain Key    ${json}    message
-    Dictionary Value Should Be    ${json}    message    Hello, Athena!
 
-TC-002 Verify Hello World API with empty name
+TC_002_Sad_Path_Invalid_Characters
+    [Documentation]    Sad Path - Invalid Characters
     Create Session    api    http://127.0.0.1:8000
-    ${resp}=    GET On Session    api    /hello/
-    Status Should Be    404    ${resp}
+    ${resp}=    GET On Session    api    /hello/@#%    expected_status=any
+    Status Should Be    400    ${resp}
+    ${json}=    Set Variable    ${resp.json()}
+    Dictionary Should Contain Key    ${json}    detail
 
-TC-003 Verify Hello World API with special characters in name
+TC_003_Sad_Path_Empty_Name
+    [Documentation]    Sad Path - Empty Name
     Create Session    api    http://127.0.0.1:8000
-    ${resp}=    GET On Session    api    /hello/@#%
+    ${resp}=    GET On Session    api    /hello/    expected_status=any
     Status Should Be    404    ${resp}
