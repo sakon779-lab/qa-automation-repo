@@ -1,4 +1,4 @@
 CaseID, TestType, Description, PreRequisites, Steps, ExpectedResult
-TC-001, Positive, Verify Hello World API with valid name, Mock: None, Call GET /hello/Athena, 200 OK, {"message": "Hello, Athena!"}
-TC-002, Negative, Verify Hello World API with empty name, Mock: None, Call GET /hello/, 404 Not Found
-TC-003, Negative, Verify Hello World API with special characters in name, Mock: None, Call GET /hello/@#%, 404 Not Found
+TC-001, Positive, Happy Path - Valid Name, Mock: None, Call GET /hello/Athena, 200 OK, {"message": "Hello, Athena!"}
+TC-002, Negative, Sad Path - Invalid Characters, Mock: None, Call GET /hello/@#%, 400 Bad Request, {"detail": "Name must contain only alphabets"}
+TC-003, Negative, Sad Path - Empty Name, Mock: None, Call GET /hello/, 404 Not Found
