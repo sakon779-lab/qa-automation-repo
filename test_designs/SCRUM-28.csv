@@ -1,5 +1,5 @@
 CaseID, TestType, Description, PreRequisites, Steps, ExpectedResult
 TC-001, Positive, Happy Path - Reverse a string, Mock: None, Call GET /reverse/Olympus, 200 OK {"original": "Olympus", "reversed": "supmylO"}
 TC-002, Positive, Happy Path - Palindrome, Mock: None, Call GET /reverse/racecar, 200 OK {"original": "racecar", "reversed": "racecar"}
-TC-003, Negative, Sad Path - Empty string, Mock: None, Call GET /reverse/, 400 Bad Request
-TC-004, Negative, Sad Path - Spaces only, Mock: None, Call GET /reverse/ , 400 Bad Request
+TC-003, Negative, Sad Path - Empty string, Mock: None, Call GET /reverse/, 404 Not Found
+TC-004, Negative, Sad Path - Spaces only, Mock: None, Call GET /reverse/ , 404 Not Found
