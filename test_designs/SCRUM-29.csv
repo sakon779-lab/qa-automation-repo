@@ -1,0 +1,10 @@
+CaseID,TestType,Description,PreRequisites,Steps,ExpectedResult
+TC-001,Positive,Verify API with Weak Password,None,CALL POST /check-password with body {"password": "abc"},200 OK with score=0 and strength="Weak"
+TC-002,Positive,Verify API with Medium Password,None,CALL POST /check-password with body {"password": "Ab1"},200 OK with score=2 and strength="Medium"
+TC-003,Positive,Verify API with Strong Password,None,CALL POST /check-password with body {"password": "StrongP@ss1"},200 OK with score=4 and strength="Strong"
+TC-004,Negative,Verify API with Empty Password,None,CALL POST /check-password with body {},400 Bad Request with detail="Password cannot be empty"
+TC-005,Negative,Verify API with Null Password,None,CALL POST /check-password with body {"password": null},422 Unprocessable Entity
+TC-006,Negative,Verify API with Only Whitespace Password,None,CALL POST /check-password with body {"password": "    "},400 Bad Request with detail="Password cannot be empty"
+TC-007,Positive,Verify Feedback for Weak Password - Short,None,CALL POST /check-password with body {"password": "123"},200 OK with score=1 and feedback=["Password is too short"]
+TC-008,Positive,Verify Feedback for Weak Password - No Number,None,CALL POST /check-password with body {"password": "Abcdefgh"},200 OK with score=1 and feedback=["Add a number"]
+TC-009,Positive,Verify Feedback for Medium Password - No Special Char,None,CALL POST /check-password with body {"password": "StrongPass1"},200 OK with score=3 and feedback=["Add a special character"]
