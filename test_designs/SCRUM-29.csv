@@ -1,0 +1,6 @@
+CaseID,TestType,Description,PreRequisites,Steps,ExpectedResult
+TC-001,Positive,Verify Strong Password,Mock: None,Call POST /check-password with {"password": "StrongP@ss1"},200 OK with {"score": 4, "strength": "Strong", "feedback": []}
+TC-002,Positive,Verify Medium Password,Mock: None,Call POST /check-password with {"password": "Ab1"},200 OK with {"score": 2, "strength": "Medium", "feedback": ["Password is too short"]}
+TC-003,Positive,Verify Weak Password,Mock: None,Call POST /check-password with {"password": "abc"},200 OK with {"score": 0, "strength": "Weak", "feedback": ["Password is too short", "Add a number", "Add an uppercase letter", "Add a special character"]}
+TC-004,Negative,Verify Empty Password,Mock: None,Call POST /check-password with {"password": ""},400 Bad Request with {"detail": "Password cannot be empty"}
+TC-005,Negative,Verify Null Password,Mock: None,Call POST /check-password with {"password": null},422 Unprocessable Entity
