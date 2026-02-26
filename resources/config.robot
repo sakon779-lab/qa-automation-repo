@@ -15,7 +15,7 @@ ${MOCK_SERVER_URL}   http://127.0.0.1:1080
 
 # --- Database (PostgreSQL) ---
 ${DB_HOST}           127.0.0.1
-${DB_PORT}           5433
+${DB_PORT}           5434
 ${DB_NAME}           shop_db
 ${DB_USER}           postgres
 ${DB_PASS}           secretpassword
