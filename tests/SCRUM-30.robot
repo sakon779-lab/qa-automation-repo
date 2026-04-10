@@ -13,7 +13,7 @@ TC-001_Successful_Checkout_Happy_Path
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -54,7 +54,7 @@ TC-002_Payment_Declined
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -93,7 +93,7 @@ TC-003_User_Not_Found
     # --- 1. SETUP PHASE ---
     Connect To Global Database
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -125,8 +125,8 @@ TC-003_User_Not_Found
     
     # --- 4. TEARDOWN PHASE ---
     [Teardown]    Run Keywords
-    ...    Log    No cleanup needed for TC-003
-    ...    AND    Log    TC-003 test completed
+    ...    Log    No cleanup needed
+    ...    AND    Log    Test completed without DB connection
 
 TC-004_Missing_user_id
     [Documentation]    Negative test case for missing user_id
@@ -136,7 +136,7 @@ TC-004_Missing_user_id
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -177,7 +177,7 @@ TC-005_user_id_not_positive_integer
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -218,7 +218,7 @@ TC-006_Missing_product_id
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -259,7 +259,7 @@ TC-007_Empty_product_id
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -300,7 +300,7 @@ TC-008_Missing_amount
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
@@ -341,7 +341,7 @@ TC-009_Amount_not_strictly_greater_than_0
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    http://127.0.0.1:1080
     
     # --- 2. EXERCISE PHASE ---
     ${mock_path}=       Set Variable    /external/payment/charge
