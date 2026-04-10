@@ -13,33 +13,38 @@ TC-001_Successful_Checkout_Happy_Path
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01    amount=1500.00
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01    amount=1500.00
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    201    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[order_status]    COMPLETED
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id} AND status = 'COMPLETED'
     Should Be Equal As Integers    ${db_count_result[0][0]}    1
     
@@ -54,33 +59,38 @@ TC-002_Payment_Declined
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${400}
-    ${mock_json}=       Create Dictionary    status=DECLINED    reason="Insufficient Funds"
+    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01    amount=1500.00
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${400}
+    ${mock_json}=    Create Dictionary    status=DECLINED    reason=Insufficient Funds
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01    amount=1500.00
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    402    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    Payment Declined
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_count_result[0][0]}    0
     
@@ -91,42 +101,41 @@ TC-003_User_Not_Found
     [Documentation]    Negative test case for user not found
     
     # --- 1. SETUP PHASE ---
-    Connect To Global Database
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    user_id=99999    product_id=PROD-01    amount=1500.00
+    ${str_id}=    Convert To String    99999
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["99999"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=99999    product_id=PROD-01    amount=1500.00
-    ${str_id}=       Convert To String    99999
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    404    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    User not found
     
-    # Post-Assertion from CSV
-    ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = 99999
-    Should Be Equal As Integers    ${db_count_result[0][0]}    0
-    
     # --- 4. TEARDOWN PHASE ---
     [Teardown]    Run Keywords
-    ...    Log    No cleanup needed for TC-003
-    ...    AND    Log    TC-003 test completed
+    ...    Disconnect From Global Database
 
 TC-004_Missing_user_id
     [Documentation]    Negative test case for missing user_id
@@ -136,33 +145,38 @@ TC-004_Missing_user_id
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    product_id=PROD-01    amount=1500.00
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    product_id=PROD-01    amount=1500.00
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    400    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    user_id is required
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_count_result[0][0]}    0
     
@@ -177,33 +191,38 @@ TC-005_user_id_not_positive_integer
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    user_id=-999    product_id=PROD-01    amount=1500.00
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=-999    product_id=PROD-01    amount=1500.00
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    400    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    user_id must be a positive integer
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_count_result[0][0]}    0
     
@@ -218,33 +237,38 @@ TC-006_Missing_product_id
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    user_id=${dynamic_id}    amount=1500.00
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=${dynamic_id}    amount=1500.00
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    400    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    product_id is required
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_count_result[0][0]}    0
     
@@ -259,33 +283,38 @@ TC-007_Empty_product_id
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=    amount=1500.00
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=    amount=1500.00
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    400    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    product_id cannot be empty
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_count_result[0][0]}    0
     
@@ -300,33 +329,38 @@ TC-008_Missing_amount
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    400    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    amount is required
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_count_result[0][0]}    0
     
@@ -341,33 +375,38 @@ TC-009_Amount_not_strictly_greater_than_0
     ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
     Execute Sql String    INSERT INTO users (id, status) VALUES (${dynamic_id}, 'ACTIVE')
     Create Session    api    ${BASE_API_URL}
-    Create Session    mock_api    ${MOCKSERVER_URL}
+    Create Session    mock_api    ${MOCK_SERVER_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${mock_path}=       Set Variable    /external/payment/charge
-    ${mock_status}=     Set Variable    ${200}
-    ${mock_json}=       Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
+    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01    amount=-1500.00
+    ${str_id}=    Convert To String    ${dynamic_id}
+    ${headers}=    Create Dictionary    X-Test-Id=${str_id}
+    
+    # Mock Setup
+    ${mock_path}=    Set Variable    /external/payment/charge
+    ${mock_status}=    Set Variable    ${200}
+    ${mock_json}=    Create Dictionary    status=SUCCESS    txn_id=mock_txn_888
     
     ${test_id_list}=    Evaluate    ["${dynamic_id}"]
     ${headers_dict}=    Create Dictionary    X-Test-Id=${test_id_list}
     
-    ${http_req}=        Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
-    ${body_dict}=       Create Dictionary    type=JSON    json=${mock_json}
-    ${http_resp}=       Create Dictionary    statusCode=${mock_status}    body=${body_dict}
-    ${mock_exp}=        Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
-    PUT On Session        mock_api    /mockserver/expectation    json=${mock_exp}
+    ${http_req}=    Create Dictionary    method=POST    path=${mock_path}    headers=${headers_dict}
     
-    ${payload}=    Create Dictionary    user_id=${dynamic_id}    product_id=PROD-01    amount=-1500.00
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
+    ${body_dict}=    Create Dictionary    type=JSON    json=${mock_json}
+    ${http_resp}=    Create Dictionary    statusCode=${mock_status}    body=${body_dict}
+    
+    ${mock_exp}=    Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
+    PUT On Session    mock_api    /mockserver/expectation    json=${mock_exp}
+    
+    # Main API Call
+    ${resp}=    POST On Session    api    /api/v1/checkout    json=${payload}    headers=${headers}    expected_status=any
     
     # --- 3. VERIFICATION PHASE ---
     Status Should Be    400    ${resp}
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    amount must be strictly greater than 0
     
-    # Post-Assertion from CSV
+    # Post-Assertion
     ${db_count_result}=    Query    SELECT count(*) FROM orders WHERE user_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_count_result[0][0]}    0
     
