@@ -12,10 +12,13 @@ ${BASE_API_URL}      http://127.0.0.1:8000
 
 # --- Mock Server ---
 ${MOCK_SERVER_URL}   http://127.0.0.1:1080
+# alias — test เก่าบางไฟล์ (SCRUM-30) อ้างชื่อไม่มี underscore
+${MOCKSERVER_URL}    ${MOCK_SERVER_URL}
 
 # --- Database (PostgreSQL) ---
+# DB_PORT 5435 = docker payment db (เดิม 5434 ชนกับ native PostgreSQL บนเครื่อง)
 ${DB_HOST}           127.0.0.1
-${DB_PORT}           5434
+${DB_PORT}           5435
 ${DB_NAME}           shop_db
 ${DB_USER}           postgres
 ${DB_PASS}           secretpassword

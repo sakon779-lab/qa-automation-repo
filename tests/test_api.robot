@@ -1,8 +1,9 @@
 *** Settings ***
 Library    RequestsLibrary
+Resource   ../resources/config.robot
 
 *** Variables ***
-${API_URL}    http://127.0.0.1:8000
+${API_URL}    ${BASE_API_URL}
 
 *** Test Cases ***
 Test String Reverse Endpoint

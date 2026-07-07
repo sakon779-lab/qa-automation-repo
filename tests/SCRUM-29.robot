@@ -1,11 +1,12 @@
 *** Settings ***
 Library    RequestsLibrary
 Library    Collections
+Resource   ../resources/config.robot
 
 *** Test Cases ***
 TC-001 Verify Strong Password
     [Documentation]    Verify Strong Password
-    Create Session    api    http://127.0.0.1:8000
+    Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    password=StrongP@ss1
     ${resp}=    POST On Session    api    /check-password    json=${payload}
     Status Should Be    200    ${resp}
@@ -16,7 +17,7 @@ TC-001 Verify Strong Password
 
 TC-002 Verify Medium Password
     [Documentation]    Verify Medium Password
-    Create Session    api    http://127.0.0.1:8000
+    Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    password=Ab1
     ${resp}=    POST On Session    api    /check-password    json=${payload}
     Status Should Be    200    ${resp}
@@ -29,7 +30,7 @@ TC-002 Verify Medium Password
 
 TC-003 Verify Weak Password
     [Documentation]    Verify Weak Password
-    Create Session    api    http://127.0.0.1:8000
+    Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    password=abc
     ${resp}=    POST On Session    api    /check-password    json=${payload}
     Status Should Be    200    ${resp}
@@ -41,7 +42,7 @@ TC-003 Verify Weak Password
 
 TC-004 Verify Empty Password
     [Documentation]    Verify Empty Password
-    Create Session    api    http://127.0.0.1:8000
+    Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    password=
     # ⚠️ CRITICAL: Use expected_status=any to prevent auto-fail on 4xx/5xx
     ${resp}=    POST On Session    api    /check-password    json=${payload}    expected_status=any
@@ -51,7 +52,7 @@ TC-004 Verify Empty Password
 
 TC-005 Verify Null Password
     [Documentation]    Verify Null Password
-    Create Session    api    http://127.0.0.1:8000
+    Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    password=${None}
     # ⚠️ CRITICAL: Use expected_status=any to prevent auto-fail on 4xx/5xx
     ${resp}=    POST On Session    api    /check-password    json=${payload}    expected_status=any

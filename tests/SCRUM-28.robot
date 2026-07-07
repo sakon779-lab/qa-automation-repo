@@ -1,9 +1,10 @@
 *** Settings ***
 Library    RequestsLibrary
 Library    Collections
+Resource   ../resources/config.robot
 
 *** Variables ***
-${BASE_URL}    http://127.0.0.1:8000
+${BASE_URL}    ${BASE_API_URL}
 
 *** Test Cases ***
 TC-001_Happy_Path_Reverse_a_string
