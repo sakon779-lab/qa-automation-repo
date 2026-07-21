@@ -5,20 +5,21 @@ Library          RequestsLibrary
 
 *** Variables ***
 # ==========================================
-# 🌍 ENVIRONMENT CONFIGURATIONS
+# 🌍 ENVIRONMENT CONFIGURATIONS — default to the Hermes QA env (:8001/:1081/:5436)
+# override per-var with env QA_API_URL / QA_MOCK_URL / QA_DB_PORT (e.g. Jenkins, or dev :8000)
 # ==========================================
 # --- Target API ---
-${BASE_API_URL}      http://127.0.0.1:8000
+${BASE_API_URL}      %{QA_API_URL=http://127.0.0.1:8001}
 
 # --- Mock Server ---
-${MOCK_SERVER_URL}   http://127.0.0.1:1080
+${MOCK_SERVER_URL}   %{QA_MOCK_URL=http://127.0.0.1:1081}
 # alias — test เก่าบางไฟล์ (SCRUM-30) อ้างชื่อไม่มี underscore
 ${MOCKSERVER_URL}    ${MOCK_SERVER_URL}
 
 # --- Database (PostgreSQL) ---
 # DB_PORT 5435 = docker payment db (เดิม 5434 ชนกับ native PostgreSQL บนเครื่อง)
 ${DB_HOST}           127.0.0.1
-${DB_PORT}           5435
+${DB_PORT}           %{QA_DB_PORT=5436}
 ${DB_NAME}           shop_db
 ${DB_USER}           postgres
 ${DB_PASS}           secretpassword
