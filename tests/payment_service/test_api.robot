@@ -1,6 +1,6 @@
 *** Settings ***
 Library    RequestsLibrary
-Resource   ../resources/config.robot
+Resource   ../../resources/projects/payment_service/config.robot
 
 *** Variables ***
 ${API_URL}    ${BASE_API_URL}

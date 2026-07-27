@@ -1,7 +1,7 @@
 *** Settings ***
 Library    RequestsLibrary
 Library    Collections
-Resource   ../resources/config.robot
+Resource   ../../resources/projects/payment_service/config.robot
 
 *** Test Cases ***
 TC-001_Happy_Path_Valid_Name
