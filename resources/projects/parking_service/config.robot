@@ -16,3 +16,17 @@ ${DB_PORT}           %{QA_DB_PORT=5438}
 ${DB_NAME}           %{QA_DB_NAME=parking}
 ${DB_USER}           %{QA_DB_USER=parking}
 ${DB_PASS}           %{QA_DB_PASS=parking}
+
+*** Keywords ***
+Cleanup Parking Test Data
+    [Documentation]    Standard [Teardown] for any test that SEEDED rows: truncate every parking
+    ...                table (children die via CASCADE — sessions go with reservations), clear mock
+    ...                expectations, close the DB connection. Call ONLY from tests that ran
+    ...                Connect To Global Database and seeded data (no-seed tests get NO teardown).
+    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE reservations RESTART IDENTITY CASCADE
+    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE spots RESTART IDENTITY CASCADE
+    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE lots RESTART IDENTITY CASCADE
+    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE drivers RESTART IDENTITY CASCADE
+    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE owners RESTART IDENTITY CASCADE
+    Reset Mock Server
+    Run Keyword And Ignore Error    Disconnect From Global Database
