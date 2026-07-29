@@ -59,7 +59,7 @@ TC-003_Verify_API_Returns_409_For_Already_Completed_Session
 TC-004_Verify_API_Returns_404_For_Unknown_Session
     [Documentation]    Verify API returns 404 when checking out an unknown session
     # --- EXERCISE PHASE ---
-    ${non_existent_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${non_existent_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     ${str_non_existent_id}=    Convert To String    ${non_existent_id}
     ${headers}=    Create Dictionary    X-Test-Id=${str_non_existent_id}
     ${resp}=    POST On Session    api    /sessions/${non_existent_id}/checkout    json={}    headers=${headers}    expected_status=any
@@ -72,7 +72,7 @@ TC-004_Verify_API_Returns_404_For_Unknown_Session
 *** Keywords ***
 Setup_Test_Environment
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     ${str_dynamic_id}=    Convert To String    ${dynamic_id}
     ${dynamic_id_plus_one}=    Evaluate    ${dynamic_id} + 1    modules=builtins
     
@@ -94,7 +94,7 @@ Setup_Test_Environment
 
 Setup_Test_Environment_For_TC_003
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     ${str_dynamic_id}=    Convert To String    ${dynamic_id}
     
     # --- SETUP PHASE ---
@@ -112,12 +112,17 @@ Setup_Test_Environment_For_TC_003
     Set Suite Variable    ${str_dynamic_id}    ${str_dynamic_id}
 
 Cleanup_Test_Environment
-    [Arguments]    ${id}
-    Execute Sql String    TRUNCATE reservations RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE spots RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE lots RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE drivers RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE owners RESTART IDENTITY CASCADE
-    Disconnect From Global Database
-
+    [Arguments]    ${id}=${EMPTY}
+    IF    '${id}' != ''
+        ${id2}=    Evaluate    ${id} + 1
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM penalties WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE id IN (${id}, ${id2})
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM reservations WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM spots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM lots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM drivers WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM owners WHERE id = ${id}
+    END
+    Run Keyword And Ignore Error    Disconnect From Global Database
 [Teardown]    Cleanup_Test_Environment    ${dynamic_id}

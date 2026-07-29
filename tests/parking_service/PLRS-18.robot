@@ -9,7 +9,7 @@ TC-001_Verify_No_Overstay_Ends_Right_Now
     [Documentation]    Verify no overstay when the reservation ends right now (inside the 10-minute grace)
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver A', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_id}, 'Lot A', 5.00)
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
@@ -33,7 +33,7 @@ TC-002_Verify_No_Overstay_Ended_8_Minutes_Ago
     [Documentation]    Verify no overstay when the reservation ended 8 minutes ago (still inside the 10-minute grace)
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver A', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_id}, 'Lot A', 5.00)
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
@@ -57,7 +57,7 @@ TC-003_Verify_Overstay_Begins_Just_Past_Grace
     [Documentation]    Verify overstay begins just past the grace (reservation ended 10.5 minutes ago -> 30s margin keeps ceil at 1)
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver A', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_id}, 'Lot A', 5.00)
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
@@ -81,7 +81,7 @@ TC-004_Verify_Significant_Overstay
     [Documentation]    Verify significant overstay (reservation ended 39.5 minutes ago -> 29.5 min past grace -> ceil 30)
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver A', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_id}, 'Lot A', 5.00)
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
@@ -118,7 +118,7 @@ TC-006_Verify_Completed_Session_Bills_From_Stored_Checkout_At
     [Documentation]    Verify completed session bills from stored checkout_at (checked out 40 min after end -> 30 billable) — fully deterministic: no live clock involved
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver A', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_id}, 'Lot A', 5.00)
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
@@ -144,7 +144,7 @@ TC-007_Verify_Completed_Session_Checked_Out_Within_Grace
     [Documentation]    Verify completed session that checked out within grace is not billable (checked out 8 min after end)
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver A', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_id}, 'Lot A', 5.00)
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
@@ -166,9 +166,16 @@ TC-007_Verify_Completed_Session_Checked_Out_Within_Grace
 
 *** Keywords ***
 Cleanup Test Case And Mock
-    [Arguments]    ${id}
-    Execute Sql String    TRUNCATE reservations RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE spots RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE lots RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE drivers RESTART IDENTITY CASCADE
-    Disconnect From Global Database
+    [Arguments]    ${id}=${EMPTY}
+    IF    '${id}' != ''
+        ${id2}=    Evaluate    ${id} + 1
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM penalties WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE id IN (${id}, ${id2})
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM reservations WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM spots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM lots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM drivers WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM owners WHERE id = ${id}
+    END
+    Run Keyword And Ignore Error    Disconnect From Global Database

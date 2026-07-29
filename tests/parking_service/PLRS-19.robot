@@ -10,7 +10,7 @@ TC-001_Verify_API_Sends_Warning_And_Sets_Warned_At_For_An_Overstaying_Session_Th
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Test Driver', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'Test Lot', 5.00, '1234')
@@ -49,7 +49,7 @@ TC-002_Verify_API_Does_Not_Send_A_Second_Warning_For_An_Overstaying_Session_That
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Test Driver', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'Test Lot', 5.00, '1234')
@@ -88,7 +88,7 @@ TC-003_Verify_API_Returns_404_When_Session_Does_Not_Exist
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # Create Sessions
     Create Session    api    ${BASE_API_URL}
@@ -117,7 +117,7 @@ TC-004_Verify_API_Returns_400_When_Session_Is_Not_Overstaying
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Test Driver', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'Test Lot', 5.00, '1234')
@@ -152,21 +152,26 @@ TC-004_Verify_API_Returns_400_When_Session_Is_Not_Overstaying
 
 *** Keywords ***
 Cleanup Test Case And Mock
-    [Arguments]    ${id}
-    # 1. Clear Database
-    Execute Sql String    TRUNCATE reservations RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE spots RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE lots RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE drivers RESTART IDENTITY CASCADE
-    Execute Sql String    TRUNCATE owners RESTART IDENTITY CASCADE
-
-    # 2. Clear Mock Safely (Step-by-step to preserve types)
+    [Arguments]    ${id}=${EMPTY}
+    IF    '${id}' != ''
+        ${id2}=    Evaluate    ${id} + 1
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM penalties WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE id IN (${id}, ${id2})
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM reservations WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM spots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM lots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM drivers WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM owners WHERE id = ${id}
+    END
+    Run Keyword And Ignore Error    Disconnect From Global Database
+# 2. Clear Mock Safely (Step-by-step to preserve types)
     Reset Mock Server
 
     # 3. Disconnect
     Disconnect From Global Database
 
 Cleanup Mock Server
-    [Arguments]
-    # Clear Mock Safely (Step-by-step to preserve types)
-    Reset Mock Server
+    # global MockServer reset is parallel-hostile; expectations are canned per-path and the
+    # QA stack is recreated on every deploy - nothing to clean per test
+    No Operation
