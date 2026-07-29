@@ -77,5 +77,4 @@ Cleanup Booking Data
     Run Keyword And Ignore Error    Execute Sql String    DELETE FROM spots WHERE id = ${ids}[spot]
     Run Keyword And Ignore Error    Execute Sql String    DELETE FROM lots WHERE id = ${ids}[lot]
     Run Keyword And Ignore Error    Execute Sql String    DELETE FROM drivers WHERE id = ${ids}[driver]
-    Reset Mock Server
     Disconnect From Global Database

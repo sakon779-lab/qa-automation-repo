@@ -19,14 +19,19 @@ ${DB_PASS}           %{QA_DB_PASS=parking}
 
 *** Keywords ***
 Cleanup Parking Test Data
-    [Documentation]    Standard [Teardown] for any test that SEEDED rows: truncate every parking
-    ...                table (children die via CASCADE — sessions go with reservations), clear mock
-    ...                expectations, close the DB connection. Call ONLY from tests that ran
-    ...                Connect To Global Database and seeded data (no-seed tests get NO teardown).
-    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE reservations RESTART IDENTITY CASCADE
-    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE spots RESTART IDENTITY CASCADE
-    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE lots RESTART IDENTITY CASCADE
-    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE drivers RESTART IDENTITY CASCADE
-    Run Keyword And Ignore Error    Execute Sql String    TRUNCATE owners RESTART IDENTITY CASCADE
-    Reset Mock Server
+    [Documentation]    PARALLEL-SAFE standard [Teardown] for a test that seeded rows with an
+    ...                explicit <dynamic_id>: deletes ONLY that test's rows, children first.
+    ...                (The old TRUNCATE version wiped concurrently-running tests' data.)
+    [Arguments]    ${id}=${EMPTY}
+    IF    '${id}' != ''
+        ${id2}=    Evaluate    ${id} + 1
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM penalties WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE reservation_id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE id IN (${id}, ${id2})
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM reservations WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM spots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM lots WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM drivers WHERE id = ${id}
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM owners WHERE id = ${id}
+    END
     Run Keyword And Ignore Error    Disconnect From Global Database

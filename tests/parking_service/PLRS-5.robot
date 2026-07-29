@@ -10,9 +10,9 @@ TC-001_Booking_Free_Spot_Returns_201
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_spot_id}=      Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_spot_id}=      Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
@@ -45,9 +45,9 @@ TC-002_Booking_30_Minute_Window_Returns_40
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_spot_id}=      Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_spot_id}=      Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
@@ -80,9 +80,9 @@ TC-003_No_Free_Spot_Available_Returns_409
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_spot_id}=      Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_spot_id}=      Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
@@ -110,9 +110,9 @@ TC-004_Start_Time_After_End_Time_Returns_400
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_spot_id}=      Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_spot_id}=      Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
@@ -139,9 +139,9 @@ TC-005_Start_Time_Equals_End_Time_Returns_400
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_spot_id}=      Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_spot_id}=      Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
@@ -168,7 +168,7 @@ TC-006_Driver_ID_Missing_Returns_400
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
     Create Session    api    ${BASE_API_URL}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
@@ -191,7 +191,7 @@ TC-007_Lot_ID_Missing_Returns_400
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
     Create Session    api    ${BASE_API_URL}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
@@ -214,8 +214,8 @@ TC-008_Start_Time_Missing_Returns_400
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
     Create Session    api    ${BASE_API_URL}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
@@ -238,8 +238,8 @@ TC-009_End_Time_Missing_Returns_400
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
     Create Session    api    ${BASE_API_URL}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
@@ -262,9 +262,9 @@ TC-010_SQL_Injection_Rejected_Safely
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_driver_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_lot_id}=       Evaluate    random.randint(1000, 9999)    modules=random
-    ${dynamic_spot_id}=      Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_driver_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_lot_id}=       Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_spot_id}=      Evaluate    random.randint(100000, 999999)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
