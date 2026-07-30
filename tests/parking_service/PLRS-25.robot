@@ -8,7 +8,7 @@ Resource   ../../resources/projects/parking_service/config.robot
 TC-001_Verify_Rollup_For_Day_With_2_Bookings_And_1_Penalty
     [Documentation]    Verify the rollup for a day with 2 bookings and 1 penalty: fees 160 + penalty 30 - 2x10 platform = revenue 170 (R9).
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -25,7 +25,7 @@ TC-001_Verify_Rollup_For_Day_With_2_Bookings_And_1_Penalty
     Create Session    api    ${BASE_API_URL}
     ${today}=    Evaluate    datetime.date.today().strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
@@ -43,7 +43,7 @@ TC-001_Verify_Rollup_For_Day_With_2_Bookings_And_1_Penalty
 TC-002_Verify_Day_With_No_Activity_Produces_Zero_Summary_And_Emails_Stub
     [Documentation]    Verify a day with no activity produces the zero summary and still sends the stub email.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -57,7 +57,7 @@ TC-002_Verify_Day_With_No_Activity_Produces_Zero_Summary_And_Emails_Stub
     Create Session    api    ${BASE_API_URL}
     ${today}=    Evaluate    datetime.date.today().strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
@@ -76,7 +76,7 @@ TC-002_Verify_Day_With_No_Activity_Produces_Zero_Summary_And_Emails_Stub
 TC-003_Verify_Day_With_Reservation_But_No_Sessions
     [Documentation]    Verify a day with a reservation but no sessions: bookings and revenue counted, utilization 0.0 (S6.1 counts sessions).
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -91,7 +91,7 @@ TC-003_Verify_Day_With_Reservation_But_No_Sessions
     Create Session    api    ${BASE_API_URL}
     ${today}=    Evaluate    datetime.date.today().strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
@@ -110,7 +110,7 @@ TC-003_Verify_Day_With_Reservation_But_No_Sessions
 TC-004_Verify_Penalty_Is_Included_In_Revenue
     [Documentation]    Verify a penalty is included in revenue: 1 booking 80 + penalty 50 - 10 platform = 120.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -126,7 +126,7 @@ TC-004_Verify_Penalty_Is_Included_In_Revenue
     Create Session    api    ${BASE_API_URL}
     ${today}=    Evaluate    datetime.date.today().strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
@@ -157,7 +157,7 @@ TC-005_Verify_API_Returns_404_When_Lot_Does_Not_Exist
 TC-006_Verify_API_Returns_400_When_Date_Field_Is_Missing
     [Documentation]    Verify API returns 400 when the date field is missing.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -170,7 +170,7 @@ TC-006_Verify_API_Returns_400_When_Date_Field_Is_Missing
 
     Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
@@ -184,7 +184,7 @@ TC-006_Verify_API_Returns_400_When_Date_Field_Is_Missing
 TC-007_Verify_API_Returns_400_When_Date_Is_An_Empty_String
     [Documentation]    Verify API returns 400 when the date is an empty string.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -197,7 +197,7 @@ TC-007_Verify_API_Returns_400_When_Date_Is_An_Empty_String
 
     Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    date=${SPACE * 3}  # Using ${SPACE} to represent an empty string
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
@@ -211,7 +211,7 @@ TC-007_Verify_API_Returns_400_When_Date_Is_An_Empty_String
 TC-008_Verify_API_Returns_400_When_Date_Is_Not_YYYY_MM_DD
     [Documentation]    Verify API returns 400 when the date is not YYYY-MM-DD.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -224,7 +224,7 @@ TC-008_Verify_API_Returns_400_When_Date_Is_Not_YYYY_MM_DD
 
     Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    date=not-a-date
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
@@ -238,7 +238,7 @@ TC-008_Verify_API_Returns_400_When_Date_Is_Not_YYYY_MM_DD
 TC-009_Verify_SQL_Injection_String_Rejected_By_Format_Validation
     [Documentation]    Verify a SQL-injection string in date is rejected by format validation, never interpolated.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Sum Owner', 'sum_owner_${dynamic_id}@plrs.test', true);
@@ -251,7 +251,7 @@ TC-009_Verify_SQL_Injection_String_Rejected_By_Format_Validation
 
     Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    date='; DROP TABLE reservations;--
-    ${lot_id}=    Evaluate    ${dynamic_id} + 2    modules=builtins
+    ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
 
     # Verification
