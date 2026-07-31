@@ -21,7 +21,8 @@ TC-001_Payout_Computed_And_Transferred_Worked_Example_1
     END
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Session    api    ${BASE_API_URL}
-    ${month}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=    POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
     Status Should Be    200    ${resp}
@@ -54,7 +55,8 @@ TC-002_Negative_Net_Floors_Payout_To_Zero_No_Payment_Worked_Example_2
         Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '${i+1} hour', date_trunc('month', NOW()) + INTERVAL '${i+3} hour', 'COMPLETED', 20);
     END
     Create Session    api    ${BASE_API_URL}
-    ${month}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=    POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
     Status Should Be    200    ${resp}
@@ -83,7 +85,8 @@ TC-003_Exact_Break_Even_Payout_Zero_Not_Owing
         Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '${i+1} hour', date_trunc('month', NOW()) + INTERVAL '${i+3} hour', 'COMPLETED', 70);
     END
     Create Session    api    ${BASE_API_URL}
-    ${month}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=    POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
     Status Should Be    200    ${resp}
@@ -109,7 +112,8 @@ TC-004_Penalties_Attached_To_The_Months_Reservations_Count_Into_Gross
     Execute Sql String    INSERT INTO penalties (id, reservation_id, amount, reason) VALUES (${dynamic_id}, ${dynamic_id}, 100, 'OVERSTAY');
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Session    api    ${BASE_API_URL}
-    ${month}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=    POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
     Status Should Be    200    ${resp}
@@ -137,7 +141,8 @@ TC-005_Reservations_Outside_The_Requested_Month_Are_Excluded_From_Gross
     Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid2}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) - INTERVAL '10 day', date_trunc('month', NOW()) - INTERVAL '10 day' + INTERVAL '2 hour', 'COMPLETED', 900);
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Session    api    ${BASE_API_URL}
-    ${month}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=    POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
     Status Should Be    200    ${resp}
@@ -162,7 +167,8 @@ TC-006_Subscription_Amount_Comes_From_The_Owner_Row_Not_A_Constant
     END
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Session    api    ${BASE_API_URL}
-    ${month}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=    POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
     Status Should Be    200    ${resp}
@@ -178,7 +184,8 @@ TC-007_Unknown_Owner_Returns_Contract_404_And_Transfers_Nothing
     [Documentation]    Unknown owner returns the contract 404 and transfers nothing
     Create Session    api    ${BASE_API_URL}
     ${non_existent_integer_id}=    Evaluate    random.randint(1000, 9999)    modules=random
-    ${month}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=    POST On Session    api    /owners/${non_existent_integer_id}/payout    json=${payload}    expected_status=any
     Status Should Be    404    ${resp}

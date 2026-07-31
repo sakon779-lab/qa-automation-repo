@@ -23,7 +23,8 @@ TC-001_Verify_Rollup_For_Day_With_2_Bookings_And_1_Penalty
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
     Create Session    api    ${BASE_API_URL}
-    ${today}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%d')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
@@ -55,7 +56,8 @@ TC-002_Verify_Day_With_No_Activity_Produces_Zero_Summary_And_Emails_Stub
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
     Create Session    api    ${BASE_API_URL}
-    ${today}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%d')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
@@ -89,7 +91,8 @@ TC-003_Verify_Day_With_Reservation_But_No_Sessions
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
     Create Session    api    ${BASE_API_URL}
-    ${today}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%d')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
@@ -124,7 +127,8 @@ TC-004_Verify_Penalty_Is_Included_In_Revenue
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
     Create Session    api    ${BASE_API_URL}
-    ${today}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%d')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
@@ -145,7 +149,8 @@ TC-005_Verify_API_Returns_404_When_Lot_Does_Not_Exist
     [Documentation]    Verify API returns 404 when the lot does not exist.
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
     Create Session    api    ${BASE_API_URL}
-    ${today}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%d')    modules=datetime
+    ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
     ${resp}=    POST On Session    api    /lots/999999/daily-summary    json=${payload}    expected_status=any
 
