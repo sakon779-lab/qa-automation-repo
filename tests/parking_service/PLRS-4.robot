@@ -112,6 +112,35 @@ TC-008_Get_Nonexistent_Lot
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    Lot not found
 
+TC-009_Create_Lot_Missing_Name_Returns_400
+    [Documentation]    name absent -> 400 contract-verbatim. Declared in the contract since PLRS-4
+    ...                shipped, but had no test at ANY level until PLRS-62 — not here, not in pytest.
+    ${owner_id}=    Seed Owner
+    Create Global API Session
+    ${payload}=    Create Dictionary    owner_id=${owner_id}    hourly_rate=${40}    wall_code=1234
+    ${resp}=    POST On Session    api    /lots    json=${payload}    expected_status=any
+    Status Should Be    400    ${resp}
+    Should Be Equal As Strings    ${resp.json()}[detail]    Name is required
+    [Teardown]    Cleanup Owner    ${owner_id}
+
+TC-010_Create_Lot_Missing_Owner_Id_Returns_400
+    [Documentation]    owner_id absent -> 400 contract-verbatim (PLRS-62, same gap as TC-009)
+    Create Global API Session
+    ${payload}=    Create Dictionary    name=Lot J    hourly_rate=${40}    wall_code=1234
+    ${resp}=    POST On Session    api    /lots    json=${payload}    expected_status=any
+    Status Should Be    400    ${resp}
+    Should Be Equal As Strings    ${resp.json()}[detail]    Owner ID is required
+
+TC-011_Add_Spots_To_Nonexistent_Lot_Returns_404
+    [Documentation]    POST /lots/{id}/spots on an unknown lot -> 404. TC-008 proved this message on
+    ...                GET /lots/{id}; the contract only declared it after PLRS-62 audited it.
+    Create Global API Session
+    ${codes}=      Create List    A-1
+    ${payload}=    Create Dictionary    codes=${codes}
+    ${resp}=    POST On Session    api    /lots/99999999/spots    json=${payload}    expected_status=any
+    Status Should Be    404    ${resp}
+    Should Be Equal As Strings    ${resp.json()}[detail]    Lot not found
+
 
 *** Keywords ***
 Seed Owner

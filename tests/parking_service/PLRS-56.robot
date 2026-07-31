@@ -231,3 +231,24 @@ TC-010_Payout_Still_Rejects_Missing_Month
     ${json}=    Set Variable    ${resp.json()}
     Should Be Equal As Strings    ${json}[detail]    Month is required
     [Teardown]    Cleanup TZ Test Data    ${dynamic_id}
+
+TC-011_Daily_Summary_Unknown_Lot_Returns_404
+    [Documentation]    Declared in the contract and covered by pytest, but never at QA level until
+    ...                PLRS-62. No seed: the point is that the lot does NOT exist.
+    Create Global API Session
+    ${tz}=       Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
+    ${payload}=  Create Dictionary    date=${today}
+    ${resp}=    POST On Session    api    /lots/99999999/daily-summary    json=${payload}    expected_status=any
+    Status Should Be    404    ${resp}
+    Should Be Equal As Strings    ${resp.json()}[detail]    Lot not found
+
+TC-012_Payout_Unknown_Owner_Returns_404
+    [Documentation]    Same gap as TC-011, on the payout side (PLRS-62)
+    Create Global API Session
+    ${tz}=       Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
+    ${month}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m')    modules=datetime
+    ${payload}=  Create Dictionary    month=${month}
+    ${resp}=    POST On Session    api    /owners/99999999/payout    json=${payload}    expected_status=any
+    Status Should Be    404    ${resp}
+    Should Be Equal As Strings    ${resp.json()}[detail]    Owner not found
