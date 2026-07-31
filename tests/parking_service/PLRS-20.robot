@@ -21,7 +21,7 @@ TC-001_Verify_Penalty_For_Session_Checked_Out_40_Min_Past_End
     
     Arm Mock Expectation    POST    /charge    200    {"status": "CHARGED"}
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${payload}=    Create Dictionary
@@ -56,7 +56,7 @@ TC-002_Verify_Minimum_Penalty_Band
     
     Arm Mock Expectation    POST    /charge    200    {"status": "CHARGED"}
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${payload}=    Create Dictionary
@@ -91,7 +91,7 @@ TC-003_Verify_No_Penalty_When_Checkout_Is_Inside_The_10_Min_Grace
     
     Arm Mock Expectation    POST    /charge    200    {"status": "CHARGED"}
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${payload}=    Create Dictionary
@@ -116,7 +116,7 @@ TC-004_Verify_API_Returns_404_When_Session_Id_Not_Found
     # --- 1. SETUP PHASE ---
     Arm Mock Expectation    POST    /charge    200    {"status": "CHARGED"}
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${non_existent_id}=    Evaluate    random.randint(1000000, 2000000000) + 10000    modules=random
@@ -129,7 +129,7 @@ TC-004_Verify_API_Returns_404_When_Session_Id_Not_Found
     Should Be Equal As Strings    ${json}[detail]    Session not found
     
     # --- 4. TEARDOWN PHASE ---
-    [Teardown]    Reset Mock Server
+    [Teardown]    Clear Mock Expectations For This Test
 
 TC-005_Verify_409_When_Overstaying_But_Warning_Was_Never_Sent
     [Documentation]    Verify 409 when overstaying but warning was never sent (warned_at NULL)
@@ -147,7 +147,7 @@ TC-005_Verify_409_When_Overstaying_But_Warning_Was_Never_Sent
     
     Arm Mock Expectation    POST    /charge    200    {"status": "CHARGED"}
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${payload}=    Create Dictionary
@@ -177,7 +177,7 @@ TC-006_Verify_Exact_15_Min_Block_Boundary
     
     Arm Mock Expectation    POST    /charge    200    {"status": "CHARGED"}
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${payload}=    Create Dictionary
@@ -212,7 +212,7 @@ TC-007_Verify_API_Is_Idempotent_Per_Session
     
     Arm Mock Expectation    POST    /charge    200    {"status": "CHARGED"}
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${payload}=    Create Dictionary
@@ -248,4 +248,4 @@ Cleanup Test Case And Mock
     Execute Sql String    DELETE FROM drivers WHERE id = ${id}
     Execute Sql String    DELETE FROM owners WHERE id = ${id}
     
-    Reset Mock Server
+    Clear Mock Expectations For This Test

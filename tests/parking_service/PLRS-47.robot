@@ -13,7 +13,7 @@ TC-001_Verify_the_booking_page_renders_the_lot_name_and_its_hourly_rate
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    url=/web/bookings/new?lot_id=${dynamic_id}    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -31,7 +31,7 @@ TC-001_Verify_the_booking_page_renders_the_lot_name_and_its_hourly_rate
 
 TC-002_Verify_the_booking_page_shows_the_not_found_notice_for_an_unknown_lot
     [Documentation]    Verify the booking page shows the not-found notice for an unknown lot
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    url=/web/bookings/new?lot_id=999999    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -45,7 +45,7 @@ TC-003_Verify_the_price_estimate_ceils_a_half_hour_to_one_hour_R3_10_00_10_30_at
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_time=10:00&end_time=10:30    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -60,7 +60,7 @@ TC-004_Verify_the_price_estimate_charges_3_hours_for_a_2_5_hour_window_R3_13_00_
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_time=13:00&end_time=15:30    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -75,7 +75,7 @@ TC-005_Verify_the_price_estimate_shows_the_contract_error_when_end_time_precedes
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_time=10:30&end_time=10:00    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -90,7 +90,7 @@ TC-006_Verify_a_successful_booking_renders_the_price_the_300s_lock_countdown_and
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${form}=    Create Dictionary    driver_id=${dynamic_id}    lot_id=${dynamic_id}    start_time=10:00    end_time=10:30
     ${resp}=    POST On Session    api    /web/bookings    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
@@ -114,7 +114,7 @@ TC-007_Verify_the_booking_fragment_shows_the_contract_error_when_the_lot_has_no_
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', false)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${form}=    Create Dictionary    driver_id=${dynamic_id}    lot_id=${dynamic_id}    start_time=10:00    end_time=10:30
     ${resp}=    POST On Session    api    /web/bookings    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
@@ -132,7 +132,7 @@ TC-008_Verify_the_booking_fragment_shows_the_contract_error_when_driver_id_is_mi
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${form}=    Create Dictionary    lot_id=${dynamic_id}    start_time=10:00    end_time=10:30
     ${resp}=    POST On Session    api    /web/bookings    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
@@ -152,7 +152,7 @@ TC-009_Verify_confirming_a_live_soft_lock_charges_the_driver_and_renders_the_pay
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '0 minutes', NOW() + INTERVAL '30 minutes', 'SOFT_LOCKED', 40, NOW() + INTERVAL '5 minutes')
     Arm Mock Expectation    POST    /charge    200    {"status": "SUCCESS", "txn_id": "mock_txn_888"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${form}=    Create Dictionary
     ${resp}=    POST On Session    api    /web/bookings/${dynamic_id}/confirm    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
@@ -174,7 +174,7 @@ TC-010_Verify_confirming_after_the_soft_lock_expired_shows_the_contract_expiry_m
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '6 minutes', NOW() + INTERVAL '-5 minutes', 'SOFT_LOCKED', 40, NOW() - INTERVAL '1 minute')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${form}=    Create Dictionary
     ${resp}=    POST On Session    api    /web/bookings/${dynamic_id}/confirm    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
@@ -193,7 +193,7 @@ TC-011_Verify_confirming_an_already_confirmed_booking_shows_the_contract_duplica
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '0 minutes', NOW() + INTERVAL '30 minutes', 'CONFIRMED', 40, NOW() + INTERVAL '5 minutes')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${form}=    Create Dictionary
     ${resp}=    POST On Session    api    /web/bookings/${dynamic_id}/confirm    data=${form}    expected_status=any
     Status Should Be    200    ${resp}

@@ -22,7 +22,7 @@ TC-001_Verify_Rollup_For_Day_With_2_Bookings_And_1_Penalty
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
     ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
@@ -55,7 +55,7 @@ TC-002_Verify_Day_With_No_Activity_Produces_Zero_Summary_And_Emails_Stub
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
     ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
@@ -90,7 +90,7 @@ TC-003_Verify_Day_With_Reservation_But_No_Sessions
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
     ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
@@ -126,7 +126,7 @@ TC-004_Verify_Penalty_Is_Included_In_Revenue
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
     ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
@@ -148,7 +148,7 @@ TC-004_Verify_Penalty_Is_Included_In_Revenue
 TC-005_Verify_API_Returns_404_When_Lot_Does_Not_Exist
     [Documentation]    Verify API returns 404 when the lot does not exist.
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
     ${today}=    Evaluate    datetime.datetime.now($tz).strftime('%Y-%m-%d')    modules=datetime
     ${payload}=    Create Dictionary    date=${today}
@@ -173,7 +173,7 @@ TC-006_Verify_API_Returns_400_When_Date_Field_Is_Missing
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
@@ -200,7 +200,7 @@ TC-007_Verify_API_Returns_400_When_Date_Is_An_Empty_String
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    date=${SPACE * 3}  # Using ${SPACE} to represent an empty string
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
@@ -227,7 +227,7 @@ TC-008_Verify_API_Returns_400_When_Date_Is_Not_YYYY_MM_DD
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    date=not-a-date
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any
@@ -254,7 +254,7 @@ TC-009_Verify_SQL_Injection_String_Rejected_By_Format_Validation
     # Mock POST /email to return HTTP 200 with JSON {'status': 'SENT'}
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    date='; DROP TABLE reservations;--
     ${lot_id}=    Evaluate    ${dynamic_id} + 2
     ${resp}=    POST On Session    api    /lots/${lot_id}/daily-summary    json=${payload}    expected_status=any

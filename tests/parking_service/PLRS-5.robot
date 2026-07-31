@@ -16,7 +16,7 @@ TC-001_Booking_Free_Spot_Returns_201
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -51,7 +51,7 @@ TC-002_Booking_30_Minute_Window_Returns_40
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -87,7 +87,7 @@ TC-003_No_Free_Spot_Available_Returns_409
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
     Execute Sql String    INSERT INTO reservations (driver_id, spot_id, lot_id, start_time, end_time, status, lock_expires_at) VALUES (${dynamic_driver_id}, ${dynamic_spot_id}, ${dynamic_lot_id}, '1900-01-01 10:00:00', '1900-01-01 12:00:00', 'SOFT_LOCKED', NOW() + INTERVAL '300 seconds')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -116,7 +116,7 @@ TC-004_Start_Time_After_End_Time_Returns_400
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -145,7 +145,7 @@ TC-005_Start_Time_Equals_End_Time_Returns_400
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -169,7 +169,7 @@ TC-006_Driver_ID_Missing_Returns_400
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
     ${dynamic_lot_id}=       Evaluate    random.randint(1000000, 2000000000)    modules=random
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -192,7 +192,7 @@ TC-007_Lot_ID_Missing_Returns_400
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
     ${dynamic_driver_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -216,7 +216,7 @@ TC-008_Start_Time_Missing_Returns_400
     Connect To Global Database
     ${dynamic_driver_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${dynamic_lot_id}=       Evaluate    random.randint(1000000, 2000000000)    modules=random
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -240,7 +240,7 @@ TC-009_End_Time_Missing_Returns_400
     Connect To Global Database
     ${dynamic_driver_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${dynamic_lot_id}=       Evaluate    random.randint(1000000, 2000000000)    modules=random
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
@@ -268,7 +268,7 @@ TC-010_SQL_Injection_Rejected_Safely
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary

@@ -39,6 +39,8 @@ TC-004_Caller_Id_Reaches_The_Downstream_Stub
     ${ids}=    Seed Soft Locked Reservation
     ${id}=     Unique Request Id    plrs59-fwd
     Arm Mock Expectation    POST    /charge    200    {"status": "SUCCESS", "txn_id": "mock_txn_888"}
+    ...        request_id=${id}
+    # raw session on purpose: this suite tests the middleware, so it sets the header per call
     Create Session    api    ${BASE_API_URL}
     ${headers}=    Create Dictionary    X-Request-Id=${id}
     ${resp}=    POST On Session    api    /bookings/${ids}[res]/confirm    headers=${headers}
@@ -54,7 +56,12 @@ TC-005_Generated_Id_Reaches_Downstream_And_Matches_The_Response
     [Documentation]    With no caller header the SAME generated id is forwarded and returned —
     ...                that equality is what makes a downstream call correlatable
     ${ids}=    Seed Soft Locked Reservation
+    # request_id=ANY: this is the one case that CANNOT scope its expectation — the whole point is
+    # that the app invents the id, so no test can know it in advance. It must therefore clear the
+    # expectation by path in its own teardown (a scoped clear cannot reach an unscoped one), and
+    # it cannot run in parallel with another test on /charge.
     Arm Mock Expectation    POST    /charge    200    {"status": "SUCCESS", "txn_id": "mock_txn_888"}
+    ...        request_id=ANY
     Create Session    api    ${BASE_API_URL}
     ${resp}=    POST On Session    api    /bookings/${ids}[res]/confirm    expected_status=any
     Status Should Be    200    ${resp}
@@ -62,7 +69,7 @@ TC-005_Generated_Id_Reaches_Downstream_And_Matches_The_Response
     Should Be A Uuid4    ${generated}
     ${recorded}=    Get Mock Requests With Header    POST    /charge    X-Request-Id    ${generated}
     Length Should Be    ${recorded}    1
-    [Teardown]    Cleanup Booking Data    ${ids}
+    [Teardown]    Cleanup Booking Data And Unscoped Charge Stub    ${ids}
 
 TC-006_Empty_Header_Is_Replaced_Not_Refused
     [Documentation]    An empty value is never a 4xx and never forwarded empty
@@ -161,6 +168,14 @@ Seed Soft Locked Reservation
     Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${r_id}, ${d_id}, ${s_id}, ${l_id}, NOW(), NOW() + INTERVAL '2 hours', 'SOFT_LOCKED', 80.00, NOW() + INTERVAL '300 seconds')
     ${ids}=    Create Dictionary    driver=${d_id}    lot=${l_id}    spot=${s_id}    res=${r_id}
     RETURN    ${ids}
+
+Cleanup Booking Data And Unscoped Charge Stub
+    [Documentation]    Teardown for the one case that armed an UNSCOPED /charge expectation.
+    ...                Clearing by header cannot reach it, so it is cleared by path — otherwise it
+    ...                lingers and shadows every later test's scoped /charge stub.
+    [Arguments]    ${ids}
+    Run Keyword And Ignore Error    Clear Mock Expectations For Path    POST    /charge
+    Cleanup Booking Data    ${ids}
 
 Cleanup Booking Data
     [Documentation]    Child-first cleanup of everything Seed Soft Locked Reservation created.

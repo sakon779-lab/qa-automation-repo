@@ -17,7 +17,7 @@ TC-001_Verify_API_Marks_Confirmed_Reservation_As_No_Show_Outside_Grace_Window
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'A1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'CONFIRMED', 80)
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
 
     # Steps
@@ -47,7 +47,7 @@ TC-002_Verify_API_Does_Not_Mark_Confirmed_Reservation_As_No_Show_Within_Grace_Wi
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'A1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '5 minutes', NOW() + INTERVAL '90 minutes', 'CONFIRMED', 80)
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # Steps
     ${payload}=    Create Dictionary
@@ -76,7 +76,7 @@ TC-003_Verify_API_Does_Not_Mark_Confirmed_Reservation_As_No_Show_When_Checked_In
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'CONFIRMED', 80)
     Execute Sql String    INSERT INTO sessions (id, reservation_id, checkin_at) VALUES (${dynamic_id}, ${dynamic_id}, NOW())
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # Steps
     ${payload}=    Create Dictionary
@@ -104,7 +104,7 @@ TC-004_Verify_API_Does_Not_Mark_No_Show_Reservation_Again
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'A1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, forfeited) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'NO_SHOW', 80, true)
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # Steps
     ${payload}=    Create Dictionary
@@ -132,7 +132,7 @@ TC-005_Verify_API_Does_Not_Mark_Confirmed_Reservation_Within_Grace_Window_Bounda
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'A1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '14 minutes 30 seconds', NOW() + INTERVAL '90 minutes', 'CONFIRMED', 80)
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # Steps
     ${payload}=    Create Dictionary
@@ -160,7 +160,7 @@ TC-006_Verify_API_Does_Not_Mark_Soft_Locked_Reservation_As_No_Show
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'A1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'SOFT_LOCKED', 80)
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # Steps
     ${payload}=    Create Dictionary
@@ -191,7 +191,7 @@ TC-007_Verify_API_Marks_Multiple_Eligible_Reservations_As_No_Show_In_One_Sweep
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id} + 2, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '40 minutes', NOW() + INTERVAL '90 minutes', 'CONFIRMED', 80)
     Execute Sql String    INSERT INTO sessions (id, reservation_id, checkin_at) VALUES (${dynamic_id}, ${dynamic_id} + 2, NOW())
 
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # Steps
     ${payload}=    Create Dictionary

@@ -13,7 +13,7 @@ Resource         ../../resources/projects/parking_service/config.robot
 TC-001_Create_Lot_Default_Rate
     [Documentation]    Creates a lot with default hourly_rate (40) and a valid wall_code -> 201
     ${owner_id}=    Seed Owner
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Lot A    owner_id=${owner_id}    wall_code=1234
     ${resp}=    POST On Session    api    /lots    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
@@ -25,7 +25,7 @@ TC-001_Create_Lot_Default_Rate
 TC-002_Create_Lot_Custom_Rate
     [Documentation]    Creates a lot with a custom hourly_rate (50) and a valid wall_code -> 201
     ${owner_id}=    Seed Owner
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Lot B    owner_id=${owner_id}    hourly_rate=${50}    wall_code=1234
     ${resp}=    POST On Session    api    /lots    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
@@ -37,7 +37,7 @@ TC-002_Create_Lot_Custom_Rate
 TC-003_Reject_Wall_Code_Too_Short
     [Documentation]    wall_code shorter than 4 digits -> 422 flat detail
     ${owner_id}=    Seed Owner
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Lot C    owner_id=${owner_id}    wall_code=12
     ${resp}=    POST On Session    api    /lots    json=${payload}    expected_status=any
     Status Should Be    422    ${resp}
@@ -48,7 +48,7 @@ TC-003_Reject_Wall_Code_Too_Short
 TC-004_Reject_Wall_Code_Too_Long
     [Documentation]    wall_code longer than 4 digits -> 422 flat detail
     ${owner_id}=    Seed Owner
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Lot D    owner_id=${owner_id}    wall_code=12345
     ${resp}=    POST On Session    api    /lots    json=${payload}    expected_status=any
     Status Should Be    422    ${resp}
@@ -59,7 +59,7 @@ TC-004_Reject_Wall_Code_Too_Long
 TC-005_Reject_Wall_Code_Non_Numeric
     [Documentation]    wall_code with non-numeric characters -> 422 flat detail
     ${owner_id}=    Seed Owner
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Lot E    owner_id=${owner_id}    wall_code=12a4
     ${resp}=    POST On Session    api    /lots    json=${payload}    expected_status=any
     Status Should Be    422    ${resp}
@@ -70,7 +70,7 @@ TC-005_Reject_Wall_Code_Non_Numeric
 TC-006_Create_Spots
     [Documentation]    Adds two spots to a lot -> 201 list; spot rows land in the DB
     ${owner_id}=    Seed Owner
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${lot_payload}=    Create Dictionary    name=Lot F    owner_id=${owner_id}    wall_code=1234
     ${lot_resp}=    POST On Session    api    /lots    json=${lot_payload}    expected_status=any
     Status Should Be    201    ${lot_resp}
@@ -89,7 +89,7 @@ TC-006_Create_Spots
 TC-007_Get_Lot_With_Spot_Count
     [Documentation]    GET a lot returns its details including the computed spot_count
     ${owner_id}=    Seed Owner
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${lot_payload}=    Create Dictionary    name=Lot G    owner_id=${owner_id}    wall_code=1234
     ${lot_resp}=    POST On Session    api    /lots    json=${lot_payload}    expected_status=any
     Status Should Be    201    ${lot_resp}
@@ -106,7 +106,7 @@ TC-007_Get_Lot_With_Spot_Count
 
 TC-008_Get_Nonexistent_Lot
     [Documentation]    GET a lot id that does not exist -> 404 flat detail
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    /lots/99999999    expected_status=any
     Status Should Be    404    ${resp}
     ${json}=    Set Variable    ${resp.json()}

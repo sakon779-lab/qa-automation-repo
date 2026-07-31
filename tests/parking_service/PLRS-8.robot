@@ -11,7 +11,7 @@ Resource          ../../resources/projects/parking_service/config.robot
 *** Test Cases ***
 TC-001_All_Active_One_Held
     ${ids}=    Seed Availability Lot    active=3    inactive=0    held=1
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    /lots/${ids}[lot]/availability    expected_status=any
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}
@@ -22,7 +22,7 @@ TC-001_All_Active_One_Held
 
 TC-002_All_Active_None_Held
     ${ids}=    Seed Availability Lot    active=5    inactive=0    held=0
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    /lots/${ids}[lot]/availability    expected_status=any
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}
@@ -31,14 +31,14 @@ TC-002_All_Active_None_Held
     [Teardown]    Cleanup Availability Data    ${ids}
 
 TC-003_Unknown_Lot_Returns_404
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    /lots/999999/availability    expected_status=any
     Status Should Be    404    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Lot not found
 
 TC-004_No_Active_Spots
     ${ids}=    Seed Availability Lot    active=0    inactive=2    held=0
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    /lots/${ids}[lot]/availability    expected_status=any
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}
@@ -48,7 +48,7 @@ TC-004_No_Active_Spots
 
 TC-005_All_Active_All_Held
     ${ids}=    Seed Availability Lot    active=3    inactive=0    held=3
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    GET On Session    api    /lots/${ids}[lot]/availability    expected_status=any
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}

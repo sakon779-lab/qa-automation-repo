@@ -61,7 +61,7 @@ TC-001_Booking_At_0300_Thai_Counts_On_That_Thai_Day
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${today}=      Business Today
     ${payload}=    Create Dictionary    date=${today}
     ${resp}=       POST On Session    api    /lots/${dynamic_id}/daily-summary    json=${payload}    expected_status=any
@@ -82,7 +82,7 @@ TC-002_Booking_At_1000_Thai_Still_Counts_Same_Day
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    10
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${today}=      Business Today
     ${payload}=    Create Dictionary    date=${today}
     ${resp}=       POST On Session    api    /lots/${dynamic_id}/daily-summary    json=${payload}    expected_status=any
@@ -100,7 +100,7 @@ TC-003_Same_Booking_Absent_From_Previous_Thai_Day
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${yesterday}=    Business Today    -1
     ${payload}=      Create Dictionary    date=${yesterday}
     ${resp}=         POST On Session    api    /lots/${dynamic_id}/daily-summary    json=${payload}    expected_status=any
@@ -120,7 +120,7 @@ TC-004_Thai_Day_Spans_0300_To_2300_Across_Two_UTC_Dates
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3
     Seed Reservation At Thai Hour    ${dynamic_id}    ${res2}    23
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${today}=      Business Today
     ${payload}=    Create Dictionary    date=${today}
     ${resp}=       POST On Session    api    /lots/${dynamic_id}/daily-summary    json=${payload}    expected_status=any
@@ -137,7 +137,7 @@ TC-005_First_Of_Month_At_0300_Thai_Counts_In_That_Thai_Month
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3    40    month
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${month}=      Business This Month
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=       POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
@@ -167,7 +167,7 @@ TC-006_Full_Thai_Month_Pays_Out_Normally
         Seed Reservation At Thai Hour    ${dynamic_id}    ${res_id}    ${hours}    100    month
     END
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${month}=      Business This Month
     ${payload}=    Create Dictionary    month=${month}
     ${resp}=       POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
@@ -188,7 +188,7 @@ TC-007_Daily_Summary_Still_Rejects_Malformed_Date
     Connect To Global Database
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    date=31-07-2026
     ${resp}=       POST On Session    api    /lots/${dynamic_id}/daily-summary    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
@@ -200,7 +200,7 @@ TC-008_Daily_Summary_Still_Rejects_Missing_Date
     Connect To Global Database
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${empty_payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /lots/${dynamic_id}/daily-summary    json=${empty_payload}    expected_status=any
     Status Should Be    400    ${resp}
@@ -212,7 +212,7 @@ TC-009_Payout_Still_Rejects_Malformed_Month
     Connect To Global Database
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    month=2026/08
     ${resp}=       POST On Session    api    /owners/${dynamic_id}/payout    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
@@ -224,7 +224,7 @@ TC-010_Payout_Still_Rejects_Missing_Month
     Connect To Global Database
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${empty_payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /owners/${dynamic_id}/payout    json=${empty_payload}    expected_status=any
     Status Should Be    400    ${resp}

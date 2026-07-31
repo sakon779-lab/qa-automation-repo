@@ -13,7 +13,7 @@ TC-001_Confirm_Valid_Soft_Locked_Booking
     [Documentation]    Valid SOFT_LOCKED booking → 200 CONFIRMED + PAID payment recorded
     ${ids}=    Seed Reservation    status=SOFT_LOCKED    lock_offset_sec=300
     Arm Mock Expectation    POST    /charge    200    {"status": "SUCCESS", "txn_id": "mock_txn_888"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    POST On Session    api    /bookings/${ids}[res]/confirm    expected_status=any
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}
@@ -29,7 +29,7 @@ TC-002_Confirm_Expired_Soft_Lock_Returns_409
     [Documentation]    SOFT_LOCKED with lock_expires_at in the past → 409 contract-verbatim
     ${ids}=    Seed Reservation    status=SOFT_LOCKED    lock_offset_sec=-300
     Arm Mock Expectation    POST    /charge    200    {"status": "SUCCESS", "txn_id": "mock_txn_888"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    POST On Session    api    /bookings/${ids}[res]/confirm    expected_status=any
     Status Should Be    409    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Booking has expired. Please re-book.
@@ -39,7 +39,7 @@ TC-003_Confirm_Already_Confirmed_Returns_409
     [Documentation]    Already CONFIRMED booking → 409 contract-verbatim
     ${ids}=    Seed Reservation    status=CONFIRMED    lock_offset_sec=300
     Arm Mock Expectation    POST    /charge    200    {"status": "SUCCESS", "txn_id": "mock_txn_888"}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    POST On Session    api    /bookings/${ids}[res]/confirm    expected_status=any
     Status Should Be    409    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Booking is already confirmed.
@@ -47,7 +47,7 @@ TC-003_Confirm_Already_Confirmed_Returns_409
 
 TC-004_Confirm_Nonexistent_Booking_Returns_404
     [Documentation]    Unknown booking id → 404 contract-verbatim (no seeds → no teardown)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${resp}=    POST On Session    api    /bookings/999999/confirm    expected_status=any
     Status Should Be    404    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Booking not found

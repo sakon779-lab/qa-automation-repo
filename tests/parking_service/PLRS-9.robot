@@ -13,7 +13,7 @@ Resource         ../../resources/projects/parking_service/config.robot
 TC-001_Create_Owner_Success
     [Documentation]    Valid name + email -> 201 with the owner (subscription_active defaults true)
     ${email}=    Unique Email
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Acme Parking    email=${email}
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
@@ -25,7 +25,7 @@ TC-001_Create_Owner_Success
 
 TC-002_Missing_Name_400
     [Documentation]    name absent -> 400 flat {detail}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${email}=    Unique Email
     ${payload}=    Create Dictionary    email=${email}
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
@@ -34,7 +34,7 @@ TC-002_Missing_Name_400
 
 TC-003_Missing_Email_400
     [Documentation]    email absent -> 400 flat {detail}
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Acme Parking
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
@@ -43,7 +43,7 @@ TC-003_Missing_Email_400
 TC-004_Duplicate_Email_409
     [Documentation]    Same email twice -> second is 409 flat {detail}
     ${email}=    Unique Email
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${first}=    Create Dictionary    name=First Owner    email=${email}
     POST On Session    api    /owners    json=${first}    expected_status=any
     ${second}=    Create Dictionary    name=Second Owner    email=${email}
@@ -54,7 +54,7 @@ TC-004_Duplicate_Email_409
 
 TC-005_Empty_Name_400
     [Documentation]    name empty string -> 400
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${email}=    Unique Email
     ${payload}=    Create Dictionary    name=${EMPTY}    email=${email}
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
@@ -63,7 +63,7 @@ TC-005_Empty_Name_400
 
 TC-006_Empty_Email_400
     [Documentation]    email empty string -> 400
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=Acme Parking    email=${EMPTY}
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
@@ -72,7 +72,7 @@ TC-006_Empty_Email_400
 TC-007_Name_SQL_Injection_Accepted
     [Documentation]    SQL-injection string in name is a valid string input -> 201 (ORM stores it as data)
     ${email}=    Unique Email
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=; DROP TABLE owners;--    email=${email}
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
@@ -82,7 +82,7 @@ TC-007_Name_SQL_Injection_Accepted
 TC-008_Email_SQL_Injection_Accepted
     [Documentation]    SQL-injection string in email is a valid string input -> 201
     ${name}=    Unique Name
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=${name}    email=; DROP TABLE owners;--
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
@@ -92,7 +92,7 @@ TC-008_Email_SQL_Injection_Accepted
 TC-009_Name_XSS_Accepted
     [Documentation]    XSS string in name is a valid string input -> 201 (not executed server-side)
     ${email}=    Unique Email
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=<script>alert(1)</script>    email=${email}
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
@@ -102,7 +102,7 @@ TC-009_Name_XSS_Accepted
 TC-010_Email_XSS_Accepted
     [Documentation]    XSS string in email is a valid string input -> 201
     ${name}=    Unique Name
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    name=${name}    email=<script>alert(1)</script>
     ${resp}=    POST On Session    api    /owners    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}

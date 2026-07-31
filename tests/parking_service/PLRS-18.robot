@@ -15,7 +15,7 @@ TC-001_Verify_No_Overstay_Ends_Right_Now
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, status, start_time, end_time) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '2 hours', NOW())
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '2 hours', ${dynamic_id}, 'ACTIVE')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE ---
     ${resp}=    GET On Session    api    /sessions/${dynamic_id}/overstay    expected_status=any
@@ -39,7 +39,7 @@ TC-002_Verify_No_Overstay_Ended_8_Minutes_Ago
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, status, start_time, end_time) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '8 minutes')
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '2 hours', ${dynamic_id}, 'ACTIVE')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE ---
     ${resp}=    GET On Session    api    /sessions/${dynamic_id}/overstay    expected_status=any
@@ -63,7 +63,7 @@ TC-003_Verify_Overstay_Begins_Just_Past_Grace
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, status, start_time, end_time) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '10 minutes 30 seconds')
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '2 hours', ${dynamic_id}, 'ACTIVE')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE ---
     ${resp}=    GET On Session    api    /sessions/${dynamic_id}/overstay    expected_status=any
@@ -87,7 +87,7 @@ TC-004_Verify_Significant_Overstay
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, status, start_time, end_time) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '39 minutes 30 seconds')
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '2 hours', ${dynamic_id}, 'ACTIVE')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE ---
     ${resp}=    GET On Session    api    /sessions/${dynamic_id}/overstay    expected_status=any
@@ -104,7 +104,7 @@ TC-004_Verify_Significant_Overstay
 TC-005_Verify_API_Returns_404_For_Non_Existent_Session
     [Documentation]    Verify API returns 404 when session does not exist
     # --- 1. SETUP PHASE ---
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${resp}=    GET On Session    api    /sessions/999999/overstay    expected_status=any
@@ -124,7 +124,7 @@ TC-006_Verify_Completed_Session_Bills_From_Stored_Checkout_At
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, status, start_time, end_time) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '1 hour')
     Execute Sql String    INSERT INTO sessions (id, checkin_at, checkout_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '20 minutes 59 seconds', ${dynamic_id}, 'COMPLETED')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE ---
     Log To Console    Checking session with dynamic_id: ${dynamic_id}
@@ -150,7 +150,7 @@ TC-007_Verify_Completed_Session_Checked_Out_Within_Grace
     Execute Sql String    INSERT INTO spots (id, code, lot_id, is_active) VALUES (${dynamic_id}, 'OV-1', ${dynamic_id}, true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, status, start_time, end_time) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '1 hour')
     Execute Sql String    INSERT INTO sessions (id, checkin_at, checkout_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '52 minutes', ${dynamic_id}, 'COMPLETED')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
 
     # --- 2. EXERCISE PHASE ---
     ${resp}=    GET On Session    api    /sessions/${dynamic_id}/overstay    expected_status=any

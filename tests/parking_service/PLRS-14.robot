@@ -18,7 +18,7 @@ TC-001_Positive_Checkin_With_Correct_Wall_Code_And_Reservation
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW(), NOW() + INTERVAL '2 hours', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -48,7 +48,7 @@ TC-002_Negative_Checkin_With_Incorrect_Wall_Code
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW(), NOW() + INTERVAL '2 hours', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1235
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -72,7 +72,7 @@ TC-003_Negative_Checkin_More_Than_15_Minutes_Early
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '150 minutes', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -96,7 +96,7 @@ TC-004_Negative_Checkin_After_Grace_Window
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -109,7 +109,7 @@ TC-004_Negative_Checkin_After_Grace_Window
 
 TC-005_Negative_Checkin_Missing_Reservation_Id
     [Documentation]    Verify API returns 400 when reservation_id is missing or null
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -120,7 +120,7 @@ TC-005_Negative_Checkin_Missing_Reservation_Id
 
 TC-006_Negative_Checkin_Missing_Wall_Code
     [Documentation]    Verify API returns 400 when wall_code is missing or null
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=1
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -131,7 +131,7 @@ TC-006_Negative_Checkin_Missing_Wall_Code
 
 TC-007_Negative_Checkin_Reservation_Not_Found
     [Documentation]    Verify API returns 404 when reservation is not found
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=999999    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -153,7 +153,7 @@ TC-008_Negative_Checkin_Reservation_Not_Confirmed
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'PENDING', NOW(), NOW() + INTERVAL '2 hours', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -177,7 +177,7 @@ TC-009_Positive_Checkin_Near_Early_Edge_Of_Grace_Window
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() + INTERVAL '14 minutes', NOW() + INTERVAL '134 minutes', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -206,7 +206,7 @@ TC-010_Positive_Checkin_Near_Late_Edge_Of_Grace_Window
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW() - INTERVAL '14 minutes', NOW() + INTERVAL '106 minutes', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -224,7 +224,7 @@ TC-010_Positive_Checkin_Near_Late_Edge_Of_Grace_Window
 
 TC-011_Negative_Checkin_Reservation_Id_Zero
     [Documentation]    Verify API returns 400 when reservation_id is 0 (contract: int > 0)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=0    wall_code=1234
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -235,7 +235,7 @@ TC-011_Negative_Checkin_Reservation_Id_Zero
 
 TC-012_Negative_Checkin_Wall_Code_Length_Less_Than_Four
     [Documentation]    Verify API returns 400 when wall_code length is less than 4 (contract: string length 4)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=1    wall_code=123
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -246,7 +246,7 @@ TC-012_Negative_Checkin_Wall_Code_Length_Less_Than_Four
 
 TC-013_Negative_Checkin_Wall_Code_Length_Greater_Than_Four
     [Documentation]    Verify API returns 400 when wall_code length is greater than 4 (contract: string length 4)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=1    wall_code=12345
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -257,7 +257,7 @@ TC-013_Negative_Checkin_Wall_Code_Length_Greater_Than_Four
 
 TC-014_Negative_Checkin_Wall_Code_Leading_Trailing_Whitespace
     [Documentation]    Verify API returns 400 when wall_code has leading/trailing whitespace (length becomes 6)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=1    wall_code=${SPACE}1234${SPACE}
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -279,7 +279,7 @@ TC-015_Negative_Checkin_Wall_Code_Invalid_Characters
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW(), NOW() + INTERVAL '2 hours', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=abcd
     ${resp}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
 
@@ -303,7 +303,7 @@ TC-016_Positive_Checkin_Idempotent
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, status, start_time, end_time, spot_id) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, 'CONFIRMED', NOW(), NOW() + INTERVAL '2 hours', ${dynamic_id})
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary    reservation_id=${dynamic_id}    wall_code=1234
     ${resp1}=    POST On Session    api    /sessions/checkin    json=${payload}    expected_status=any
     ${session_id1}=    Set Variable    ${resp1.json()}[session_id]

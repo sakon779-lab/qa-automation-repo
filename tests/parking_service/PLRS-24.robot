@@ -16,7 +16,7 @@ TC-001_Verify_Utilization_66_7_Pct
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'K1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '50 minutes', NOW() - INTERVAL '10 minutes', 'CONFIRMED', 80)
     Execute Sql String    INSERT INTO sessions (id, reservation_id, checkin_at, checkout_at, status) VALUES (${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '50 minutes', NOW() - INTERVAL '10 minutes', 'COMPLETED')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${to}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -46,7 +46,7 @@ TC-002_Verify_Utilization_25_0_Pct
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'K1', true), (${dynamic_id} + 1, ${dynamic_id}, 'K2', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '40 minutes', NOW() - INTERVAL '10 minutes', 'CONFIRMED', 80)
     Execute Sql String    INSERT INTO sessions (id, reservation_id, checkin_at, checkout_at, status) VALUES (${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '40 minutes', NOW() - INTERVAL '10 minutes', 'COMPLETED')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${to}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -74,7 +74,7 @@ TC-003_Verify_Utilization_0_0_Pct_No_Sessions
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'K1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${to}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -101,7 +101,7 @@ TC-004_Verify_Utilization_0_0_Pct_No_Spots
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${to}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -128,7 +128,7 @@ TC-005_Verify_API_Returns_400_Missing_To_Param
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${from}=    Evaluate    (datetime.datetime.utcnow() - datetime.timedelta(minutes=60)).strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -151,7 +151,7 @@ TC-006_Verify_API_Returns_400_Invalid_From_Date
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${to}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -169,7 +169,7 @@ TC-006_Verify_API_Returns_400_Invalid_From_Date
 TC-007_Verify_API_Returns_404_Lot_Not_Found
     [Documentation]    Verify API returns 404 when the lot does not exist.
     # --- 1. SETUP PHASE ---
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${to}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -193,7 +193,7 @@ TC-008_Verify_Utilization_33_3_Pct_Wider_Window
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'K1', true)
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '50 minutes', NOW() - INTERVAL '10 minutes', 'CONFIRMED', 80)
     Execute Sql String    INSERT INTO sessions (id, reservation_id, checkin_at, checkout_at, status) VALUES (${dynamic_id}, ${dynamic_id}, NOW() - INTERVAL '50 minutes', NOW() - INTERVAL '10 minutes', 'COMPLETED')
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${to}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -221,7 +221,7 @@ TC-009_Verify_Zero_Length_Window_Returns_0_0_Pct
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'K1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${now}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime
@@ -248,7 +248,7 @@ TC-010_Verify_Inverted_Range_Returns_0_0_Pct
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'K1', true)
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     
     # --- 2. EXERCISE PHASE ---
     ${now}=    Evaluate    datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')    modules=datetime

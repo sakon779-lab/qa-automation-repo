@@ -19,16 +19,14 @@ TC-001_Verify_API_Sends_Warning_And_Sets_Warned_At_For_An_Overstaying_Session_Th
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '3 hours', ${dynamic_id}, 'ACTIVE')
 
     # Create Sessions
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     Create Session    mock_api    ${MOCK_SERVER_URL}
 
     # Mock POST /notify to return HTTP 200 with JSON {}
     Arm Mock Expectation    POST    /notify    200    {}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /sessions/${dynamic_id}/warn    json={}    headers=${headers}    expected_status=any
+    ${resp}=         POST On Session    api    /sessions/${dynamic_id}/warn    json={}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
     Status Should Be    200    ${resp}
@@ -58,16 +56,14 @@ TC-002_Verify_API_Does_Not_Send_A_Second_Warning_For_An_Overstaying_Session_That
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status, warned_at) VALUES (${dynamic_id}, NOW() - INTERVAL '3 hours', ${dynamic_id}, 'ACTIVE', NOW() - INTERVAL '5 minutes')
 
     # Create Sessions
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     Create Session    mock_api    ${MOCK_SERVER_URL}
 
     # Mock POST /notify to return HTTP 200 with JSON {}
     Arm Mock Expectation    POST    /notify    200    {}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /sessions/${dynamic_id}/warn    json={}    headers=${headers}    expected_status=any
+    ${resp}=         POST On Session    api    /sessions/${dynamic_id}/warn    json={}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
     Status Should Be    200    ${resp}
@@ -91,7 +87,7 @@ TC-003_Verify_API_Returns_404_When_Session_Does_Not_Exist
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # Create Sessions
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     Create Session    mock_api    ${MOCK_SERVER_URL}
 
     # Mock POST /notify to return HTTP 200 with JSON {}
@@ -99,9 +95,7 @@ TC-003_Verify_API_Returns_404_When_Session_Does_Not_Exist
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${non_existent_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
-    ${str_id}=       Convert To String    ${non_existent_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /sessions/${non_existent_id}/warn    json={}    headers=${headers}    expected_status=any
+    ${resp}=         POST On Session    api    /sessions/${non_existent_id}/warn    json={}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
     Status Should Be    404    ${resp}
@@ -126,16 +120,14 @@ TC-004_Verify_API_Returns_400_When_Session_Is_Not_Overstaying
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '3 hours', ${dynamic_id}, 'ACTIVE')
 
     # Create Sessions
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     Create Session    mock_api    ${MOCK_SERVER_URL}
 
     # Mock POST /notify to return HTTP 200 with JSON {}
     Arm Mock Expectation    POST    /notify    200    {}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
-    ${str_id}=       Convert To String    ${dynamic_id}
-    ${headers}=      Create Dictionary    X-Test-Id=${str_id}
-    ${resp}=         POST On Session    api    /sessions/${dynamic_id}/warn    json={}    headers=${headers}    expected_status=any
+    ${resp}=         POST On Session    api    /sessions/${dynamic_id}/warn    json={}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
     Status Should Be    400    ${resp}
@@ -165,8 +157,9 @@ Cleanup Test Case And Mock
         Run Keyword And Ignore Error    Execute Sql String    DELETE FROM owners WHERE id = ${id}
     END
     Run Keyword And Ignore Error    Disconnect From Global Database
-# 2. Clear Mock Safely (Step-by-step to preserve types)
-    Reset Mock Server
+    # 2. Clear only the expectations THIS test armed — a global reset would wipe the
+    #    expectations a parallel worker had already armed and was still using.
+    Clear Mock Expectations For This Test
 
     # 3. Disconnect
     Disconnect From Global Database

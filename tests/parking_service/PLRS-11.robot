@@ -18,7 +18,7 @@ TC-001_Verify_Expired_Unpaid_SOFT_LOCKED_Reservations_Are_Cancelled_By_Sweep
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'SOFT_LOCKED', 80, NOW() - INTERVAL '2 minutes')
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
 
@@ -47,7 +47,7 @@ TC-002_Verify_SOFT_LOCKED_Reservations_Still_Inside_TTL_Are_Left_Untouched
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'SOFT_LOCKED', 80, NOW() + INTERVAL '3 minutes')
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
 
@@ -76,7 +76,7 @@ TC-003_Verify_CONFIRMED_Reservations_Are_Never_Released_Even_When_Lock_Expires_A
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'CONFIRMED', 80, NOW() - INTERVAL '10 minutes')
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
 
@@ -105,7 +105,7 @@ TC-004_Verify_Already_CANCELLED_Reservations_Are_Not_Counted_Again
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'CANCELLED', 80, NOW() - INTERVAL '15 minutes')
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
 
@@ -137,7 +137,7 @@ TC-005_Verify_Mixed_Batch_Releases_Only_The_Expired_Unpaid_Soft_Locks
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id} + 2, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'CONFIRMED', 80, NOW() - INTERVAL '5 minutes')
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${resp_flush}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
     ${resp}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
@@ -171,7 +171,7 @@ TC-006_Verify_Second_Sweep_Over_Same_Data_Releases_Nothing_More
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'SOFT_LOCKED', 80, NOW() - INTERVAL '4 minutes')
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${resp_flush}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
     ${resp_first_sweep}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
@@ -208,7 +208,7 @@ TC-007_Verify_Released_Spot_Becomes_Bookable_Again
     Execute Sql String    INSERT INTO reservations (id, driver_id, lot_id, spot_id, start_time, end_time, status, price, lock_expires_at) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, NOW() + INTERVAL '30 minutes', NOW() + INTERVAL '90 minutes', 'SOFT_LOCKED', 80, NOW() - INTERVAL '90 seconds')
 
     # Steps
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     ${payload}=    Create Dictionary
     ${resp_flush}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any
     ${resp}=    POST On Session    api    /bookings/release-expired    json=${payload}    expected_status=any

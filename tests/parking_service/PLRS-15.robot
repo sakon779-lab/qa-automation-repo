@@ -10,8 +10,7 @@ TC-001_Verify_API_Completes_Active_Session_With_Correct_Duration_Min
     [Setup]    Setup_Test_Environment
     
     # --- EXERCISE PHASE ---
-    ${headers}=    Create Dictionary    X-Test-Id=${str_dynamic_id}
-    ${resp}=    POST On Session    api    /sessions/${dynamic_id}/checkout    json={}    headers=${headers}    expected_status=any
+    ${resp}=    POST On Session    api    /sessions/${dynamic_id}/checkout    json={}    expected_status=any
     
     # --- VERIFICATION PHASE ---
     Status Should Be    200    ${resp}
@@ -29,8 +28,7 @@ TC-002_Verify_Duration_Min_Rounds_Up_To_Next_Minute
     [Setup]    Setup_Test_Environment
     
     # --- EXERCISE PHASE ---
-    ${headers}=    Create Dictionary    X-Test-Id=${str_dynamic_id}
-    ${resp}=    POST On Session    api    /sessions/${dynamic_id_plus_one}/checkout    json={}    headers=${headers}    expected_status=any
+    ${resp}=    POST On Session    api    /sessions/${dynamic_id_plus_one}/checkout    json={}    expected_status=any
     
     # --- VERIFICATION PHASE ---
     Status Should Be    200    ${resp}
@@ -48,8 +46,7 @@ TC-003_Verify_API_Returns_409_For_Already_Completed_Session
     [Setup]    Setup_Test_Environment_For_TC_003
     
     # --- EXERCISE PHASE ---
-    ${headers}=    Create Dictionary    X-Test-Id=${str_dynamic_id}
-    ${resp}=    POST On Session    api    /sessions/${dynamic_id}/checkout    json={}    headers=${headers}    expected_status=any
+    ${resp}=    POST On Session    api    /sessions/${dynamic_id}/checkout    json={}    expected_status=any
     
     # --- VERIFICATION PHASE ---
     Status Should Be    409    ${resp}
@@ -60,9 +57,7 @@ TC-004_Verify_API_Returns_404_For_Unknown_Session
     [Documentation]    Verify API returns 404 when checking out an unknown session
     # --- EXERCISE PHASE ---
     ${non_existent_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
-    ${str_non_existent_id}=    Convert To String    ${non_existent_id}
-    ${headers}=    Create Dictionary    X-Test-Id=${str_non_existent_id}
-    ${resp}=    POST On Session    api    /sessions/${non_existent_id}/checkout    json={}    headers=${headers}    expected_status=any
+    ${resp}=    POST On Session    api    /sessions/${non_existent_id}/checkout    json={}    expected_status=any
     
     # --- VERIFICATION PHASE ---
     Status Should Be    404    ${resp}
@@ -73,7 +68,6 @@ TC-004_Verify_API_Returns_404_For_Unknown_Session
 Setup_Test_Environment
     Connect To Global Database
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
-    ${str_dynamic_id}=    Convert To String    ${dynamic_id}
     ${dynamic_id_plus_one}=    Evaluate    ${dynamic_id} + 1    modules=builtins
     
     # --- SETUP PHASE ---
@@ -87,15 +81,13 @@ Setup_Test_Environment
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '3570 seconds', ${dynamic_id}, 'ACTIVE')  # Adjusted to 3570 seconds for TC-001
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id_plus_one}, NOW() - INTERVAL '3661 seconds', ${dynamic_id}, 'ACTIVE')  # Adjusted to 3661 seconds for TC-002
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     Set Suite Variable    ${dynamic_id}    ${dynamic_id}
-    Set Suite Variable    ${str_dynamic_id}    ${str_dynamic_id}
     Set Suite Variable    ${dynamic_id_plus_one}    ${dynamic_id_plus_one}
 
 Setup_Test_Environment_For_TC_003
     Connect To Global Database
     ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
-    ${str_dynamic_id}=    Convert To String    ${dynamic_id}
     
     # --- SETUP PHASE ---
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'OwnerA', 'owner_${dynamic_id}@test.com', true)
@@ -107,9 +99,8 @@ Setup_Test_Environment_For_TC_003
     # --- COMPLETED SESSION ---
     Execute Sql String    INSERT INTO sessions (id, checkin_at, reservation_id, status) VALUES (${dynamic_id}, NOW() - INTERVAL '3570 seconds', ${dynamic_id}, 'COMPLETED')  # Set session to COMPLETED
     
-    Create Session    api    ${BASE_API_URL}
+    Create Global API Session
     Set Suite Variable    ${dynamic_id}    ${dynamic_id}
-    Set Suite Variable    ${str_dynamic_id}    ${str_dynamic_id}
 
 Cleanup_Test_Environment
     [Arguments]    ${id}=${EMPTY}
