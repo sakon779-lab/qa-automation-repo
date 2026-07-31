@@ -44,6 +44,27 @@ Arm Mock Expectation
     ${exp}=           Create Dictionary    httpRequest=${http_req}    httpResponse=${http_resp}
     PUT On Session    _mock    /mockserver/expectation    json=${exp}    expected_status=201
 
+Get Mock Requests With Header
+    [Documentation]    Return the requests MockServer actually RECEIVED on ${path} carrying
+    ...                ${header}: ${value} — as a list of recorded httpRequest objects.
+    ...
+    ...                Arming an expectation proves what the stub WOULD answer; this proves what the
+    ...                APP actually SENT. That is the only way to assert a header the app is
+    ...                supposed to propagate (PLRS-59's correlation id), and it is the same
+    ...                match MockServer will use to scope an expectation per test once every
+    ...                request carries its own id.
+    [Arguments]    ${method}    ${path}    ${header}    ${value}
+    Create Session    _mock    ${MOCKSERVER_URL}
+    # MockServer matches headers as name -> LIST of values (KeysToMultiValues); a bare string
+    # silently matches nothing, which would make every assertion here vacuously "0 requests".
+    ${values}=    Create List          ${value}
+    ${hdr}=       Create Dictionary    ${header}=${values}
+    ${matcher}=   Create Dictionary    method=${method}    path=${path}    headers=${hdr}
+    ${params}=    Create Dictionary    type=REQUESTS    format=JSON
+    ${resp}=      PUT On Session    _mock    /mockserver/retrieve
+    ...           params=${params}    json=${matcher}    expected_status=200
+    RETURN    ${resp.json()}
+
 Reset Mock Server
     [Documentation]    Clear every expectation so the next test/suite starts clean. Safe to call
     ...                even when MockServer is unreachable (ignored).
