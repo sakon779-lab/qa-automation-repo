@@ -8,7 +8,7 @@ Resource   ../../resources/projects/parking_service/config.robot
 TC-001_Positive_Checkin_With_Correct_Wall_Code_And_Reservation
     [Documentation]    Verify API creates session successfully with correct wall-code and reservation inside the grace window
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -38,7 +38,7 @@ TC-001_Positive_Checkin_With_Correct_Wall_Code_And_Reservation
 TC-002_Negative_Checkin_With_Incorrect_Wall_Code
     [Documentation]    Verify API returns 401 when wall-code is incorrect
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -62,7 +62,7 @@ TC-002_Negative_Checkin_With_Incorrect_Wall_Code
 TC-003_Negative_Checkin_More_Than_15_Minutes_Early
     [Documentation]    Verify API returns 425 when check-in is more than 15 minutes early (reservation starts 30 minutes from now)
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -86,7 +86,7 @@ TC-003_Negative_Checkin_More_Than_15_Minutes_Early
 TC-004_Negative_Checkin_After_Grace_Window
     [Documentation]    Verify API returns 409 when check-in is after the grace window (reservation started 30 minutes ago)
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -143,7 +143,7 @@ TC-007_Negative_Checkin_Reservation_Not_Found
 TC-008_Negative_Checkin_Reservation_Not_Confirmed
     [Documentation]    Verify API returns 409 when reservation status is not CONFIRMED
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -167,7 +167,7 @@ TC-008_Negative_Checkin_Reservation_Not_Confirmed
 TC-009_Positive_Checkin_Near_Early_Edge_Of_Grace_Window
     [Documentation]    Verify check-in succeeds near the early edge of the grace window (reservation starts 14 minutes from now)
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -196,7 +196,7 @@ TC-009_Positive_Checkin_Near_Early_Edge_Of_Grace_Window
 TC-010_Positive_Checkin_Near_Late_Edge_Of_Grace_Window
     [Documentation]    Verify check-in succeeds near the late edge of the grace window (reservation started 14 minutes ago)
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -269,7 +269,7 @@ TC-014_Negative_Checkin_Wall_Code_Leading_Trailing_Whitespace
 TC-015_Negative_Checkin_Wall_Code_Invalid_Characters
     [Documentation]    Verify API returns 401 when wall_code is 4 non-numeric characters that do not match the lot's code
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')
@@ -293,7 +293,7 @@ TC-015_Negative_Checkin_Wall_Code_Invalid_Characters
 TC-016_Positive_Checkin_Idempotent
     [Documentation]    Verify check-in is idempotent — a second check-in for the same reservation returns the same ACTIVE session and no duplicate row
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com')

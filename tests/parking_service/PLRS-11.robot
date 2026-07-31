@@ -8,7 +8,7 @@ Resource   ../../resources/projects/parking_service/config.robot
 TC-001_Verify_Expired_Unpaid_SOFT_LOCKED_Reservations_Are_Cancelled_By_Sweep
     [Documentation]    Verify an expired unpaid SOFT_LOCKED reservation is cancelled by the sweep and counted once.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner R', 'owner_${dynamic_id}@example.com', true)
@@ -37,7 +37,7 @@ TC-001_Verify_Expired_Unpaid_SOFT_LOCKED_Reservations_Are_Cancelled_By_Sweep
 TC-002_Verify_SOFT_LOCKED_Reservations_Still_Inside_TTL_Are_Left_Untouched
     [Documentation]    Verify a SOFT_LOCKED reservation still inside its TTL is left untouched.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner R', 'owner_${dynamic_id}@example.com', true)
@@ -66,7 +66,7 @@ TC-002_Verify_SOFT_LOCKED_Reservations_Still_Inside_TTL_Are_Left_Untouched
 TC-003_Verify_CONFIRMED_Reservations_Are_Never_Released_Even_When_Lock_Expires_At_Has_Passed
     [Documentation]    Verify a CONFIRMED reservation is never released even when its lock_expires_at has passed.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner R', 'owner_${dynamic_id}@example.com', true)
@@ -95,7 +95,7 @@ TC-003_Verify_CONFIRMED_Reservations_Are_Never_Released_Even_When_Lock_Expires_A
 TC-004_Verify_Already_CANCELLED_Reservations_Are_Not_Counted_Again
     [Documentation]    Verify an already CANCELLED reservation is not counted again — the sweep is idempotent through the status transition.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner R', 'owner_${dynamic_id}@example.com', true)
@@ -124,7 +124,7 @@ TC-004_Verify_Already_CANCELLED_Reservations_Are_Not_Counted_Again
 TC-005_Verify_Mixed_Batch_Releases_Only_The_Expired_Unpaid_Soft_Locks
     [Documentation]    Verify a mixed batch releases only the expired unpaid soft-locks: 2 expired + 1 still locked + 1 confirmed seeded, exactly 2 released.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner R', 'owner_${dynamic_id}@example.com', true)
@@ -161,7 +161,7 @@ TC-005_Verify_Mixed_Batch_Releases_Only_The_Expired_Unpaid_Soft_Locks
 TC-006_Verify_Second_Sweep_Over_Same_Data_Releases_Nothing_More
     [Documentation]    Verify a second sweep over the same data releases nothing more (idempotency of the whole endpoint).
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner R', 'owner_${dynamic_id}@example.com', true)
@@ -198,7 +198,7 @@ TC-006_Verify_Second_Sweep_Over_Same_Data_Releases_Nothing_More
 TC-007_Verify_Released_Spot_Becomes_Bookable_Again
     [Documentation]    Verify the released spot becomes bookable again: after the sweep the freed spot is still active and its hold is gone.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner R', 'owner_${dynamic_id}@example.com', true)

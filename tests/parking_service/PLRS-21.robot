@@ -8,7 +8,7 @@ Resource   ../../resources/projects/parking_service/config.robot
 TC-001_Verify_API_Marks_Confirmed_Reservation_As_No_Show_Outside_Grace_Window
     [Documentation]    Verify API marks a CONFIRMED reservation as NO_SHOW when it is past the grace window and not checked in.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@example.com', true)
@@ -38,7 +38,7 @@ TC-001_Verify_API_Marks_Confirmed_Reservation_As_No_Show_Outside_Grace_Window
 TC-002_Verify_API_Does_Not_Mark_Confirmed_Reservation_As_No_Show_Within_Grace_Window
     [Documentation]    Verify API does not mark a CONFIRMED reservation as NO_SHOW when it is within the grace window.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@example.com', true)
@@ -66,7 +66,7 @@ TC-002_Verify_API_Does_Not_Mark_Confirmed_Reservation_As_No_Show_Within_Grace_Wi
 TC-003_Verify_API_Does_Not_Mark_Confirmed_Reservation_As_No_Show_When_Checked_In
     [Documentation]    Verify API does not mark a CONFIRMED reservation as NO_SHOW when it is checked in.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@example.com', true)
@@ -95,7 +95,7 @@ TC-003_Verify_API_Does_Not_Mark_Confirmed_Reservation_As_No_Show_When_Checked_In
 TC-004_Verify_API_Does_Not_Mark_No_Show_Reservation_Again
     [Documentation]    Verify API does not mark a NO_SHOW reservation again.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@example.com', true)
@@ -123,7 +123,7 @@ TC-004_Verify_API_Does_Not_Mark_No_Show_Reservation_Again
 TC-005_Verify_API_Does_Not_Mark_Confirmed_Reservation_Within_Grace_Window_Boundary
     [Documentation]    Verify API does not mark a CONFIRMED reservation still inside the grace window (start 14.5 min ago - 30s margin from the boundary).
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@example.com', true)
@@ -151,7 +151,7 @@ TC-005_Verify_API_Does_Not_Mark_Confirmed_Reservation_Within_Grace_Window_Bounda
 TC-006_Verify_API_Does_Not_Mark_Soft_Locked_Reservation_As_No_Show
     [Documentation]    Verify API does not mark a SOFT_LOCKED reservation as NO_SHOW.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@example.com', true)
@@ -179,7 +179,7 @@ TC-006_Verify_API_Does_Not_Mark_Soft_Locked_Reservation_As_No_Show
 TC-007_Verify_API_Marks_Multiple_Eligible_Reservations_As_No_Show_In_One_Sweep
     [Documentation]    Verify API marks multiple eligible reservations as NO_SHOW in one sweep.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # PreRequisites
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@example.com', true)

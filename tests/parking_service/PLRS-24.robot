@@ -9,7 +9,7 @@ TC-001_Verify_Utilization_66_7_Pct
     [Documentation]    Verify utilization is 66.7 pct when one session occupied 40 of the 60-minute window on a 1-spot lot (40/60, seed inside window with margins).
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -39,7 +39,7 @@ TC-002_Verify_Utilization_25_0_Pct
     [Documentation]    Verify utilization is 25.0 pct when a 2-spot lot has one 30-minute session in the 60-minute window (30/120).
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -69,7 +69,7 @@ TC-003_Verify_Utilization_0_0_Pct_No_Sessions
     [Documentation]    Verify utilization is 0.0 pct when the lot has a spot but no sessions in the window.
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -97,7 +97,7 @@ TC-004_Verify_Utilization_0_0_Pct_No_Spots
     [Documentation]    Verify utilization is 0.0 pct (division-by-zero guard) when the lot has zero spots.
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -124,7 +124,7 @@ TC-005_Verify_API_Returns_400_Missing_To_Param
     [Documentation]    Verify API returns 400 when the 'to' query param is missing.
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -147,7 +147,7 @@ TC-006_Verify_API_Returns_400_Invalid_From_Date
     [Documentation]    Verify API returns 400 when 'from' is not a valid ISO 8601 datetime.
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -186,7 +186,7 @@ TC-008_Verify_Utilization_33_3_Pct_Wider_Window
     [Documentation]    Verify utilization halves to 33.3 pct for the same 40-minute session when the window is widened to 120 minutes (40/120).
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -216,7 +216,7 @@ TC-009_Verify_Zero_Length_Window_Returns_0_0_Pct
     [Documentation]    Verify a zero-length window (from equals to) returns 0.0 pct with available_min 0 — the empty-range guard, not an error.
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')
@@ -243,7 +243,7 @@ TC-010_Verify_Inverted_Range_Returns_0_0_Pct
     [Documentation]    Verify an inverted range (from after to) returns 0.0 pct with available_min 0 — treated as an empty period, never an error.
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner K', 'owner_${dynamic_id}@example.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver K', 'driver_${dynamic_id}@example.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'KPI Lot', 40, '1234')

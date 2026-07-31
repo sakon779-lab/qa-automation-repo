@@ -8,7 +8,7 @@ Resource   ../../resources/projects/parking_service/config.robot
 TC-001_Verify_the_booking_page_renders_the_lot_name_and_its_hourly_rate
     [Documentation]    Verify the booking page renders the lot name and its hourly rate
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -40,7 +40,7 @@ TC-002_Verify_the_booking_page_shows_the_not_found_notice_for_an_unknown_lot
 TC-003_Verify_the_price_estimate_ceils_a_half_hour_to_one_hour_R3_10_00_10_30_at_rate_40_equals_40
     [Documentation]    Verify the price estimate ceils a half hour to one hour (R3): 10:00-10:30 at rate 40 = 40
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -55,7 +55,7 @@ TC-003_Verify_the_price_estimate_ceils_a_half_hour_to_one_hour_R3_10_00_10_30_at
 TC-004_Verify_the_price_estimate_charges_3_hours_for_a_2_5_hour_window_R3_13_00_15_30_at_rate_40_equals_120
     [Documentation]    Verify the price estimate charges 3 hours for a 2.5 hour window (R3): 13:00-15:30 at rate 40 = 120
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -70,7 +70,7 @@ TC-004_Verify_the_price_estimate_charges_3_hours_for_a_2_5_hour_window_R3_13_00_
 TC-005_Verify_the_price_estimate_shows_the_contract_error_when_end_time_precedes_start_time
     [Documentation]    Verify the price estimate shows the contract error when end time precedes start time
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -85,7 +85,7 @@ TC-005_Verify_the_price_estimate_shows_the_contract_error_when_end_time_precedes
 TC-006_Verify_a_successful_booking_renders_the_price_the_300s_lock_countdown_and_the_confirm_button
     [Documentation]    Verify a successful booking renders the price, the 300s lock countdown and the confirm button
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -109,7 +109,7 @@ TC-006_Verify_a_successful_booking_renders_the_price_the_300s_lock_countdown_and
 TC-007_Verify_the_booking_fragment_shows_the_contract_error_when_the_lot_has_no_free_spot
     [Documentation]    Verify the booking fragment shows the contract error when the lot has no free spot
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -127,7 +127,7 @@ TC-007_Verify_the_booking_fragment_shows_the_contract_error_when_the_lot_has_no_
 TC-008_Verify_the_booking_fragment_shows_the_contract_error_when_driver_id_is_missing
     [Documentation]    Verify the booking fragment shows the contract error when driver id is missing
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -145,7 +145,7 @@ TC-008_Verify_the_booking_fragment_shows_the_contract_error_when_driver_id_is_mi
 TC-009_Verify_confirming_a_live_soft_lock_charges_the_driver_and_renders_the_payment_receipt
     [Documentation]    Verify confirming a live soft lock charges the driver and renders the payment receipt
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -168,7 +168,7 @@ TC-009_Verify_confirming_a_live_soft_lock_charges_the_driver_and_renders_the_pay
 TC-010_Verify_confirming_after_the_soft_lock_expired_shows_the_contract_expiry_message
     [Documentation]    Verify confirming after the soft lock expired shows the contract expiry message
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
@@ -187,7 +187,7 @@ TC-010_Verify_confirming_after_the_soft_lock_expired_shows_the_contract_expiry_m
 TC-011_Verify_confirming_an_already_confirmed_booking_shows_the_contract_duplicate_message
     [Documentation]    Verify confirming an already-confirmed booking shows the contract duplicate message
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Web Driver', 'webdrv_${dynamic_id}@plrs.test')
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active, subscription_fee) VALUES (${dynamic_id}, 'Web Owner', 'webown_${dynamic_id}@plrs.test', true, 300)
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')

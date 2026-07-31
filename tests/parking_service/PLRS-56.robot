@@ -57,7 +57,7 @@ Status Should Be
 TC-001_Booking_At_0300_Thai_Counts_On_That_Thai_Day
     [Documentation]    03:00 Thai is 20:00Z the previous day — the attribution this card changes.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
@@ -78,7 +78,7 @@ TC-001_Booking_At_0300_Thai_Counts_On_That_Thai_Day
 TC-002_Booking_At_1000_Thai_Still_Counts_Same_Day
     [Documentation]    Both zones agree on this one — the no-regression control.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    10
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
@@ -96,7 +96,7 @@ TC-002_Booking_At_1000_Thai_Still_Counts_Same_Day
 TC-003_Same_Booking_Absent_From_Previous_Thai_Day
     [Documentation]    Proves the 03:00 Thai row moved OUT of the old UTC-day window.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3
     Arm Mock Expectation    POST    /email    200    {"status": "SENT"}
@@ -114,7 +114,7 @@ TC-003_Same_Booking_Absent_From_Previous_Thai_Day
 
 TC-004_Thai_Day_Spans_0300_To_2300_Across_Two_UTC_Dates
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${res2}=          Evaluate    ${dynamic_id} + 1
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3
@@ -134,7 +134,7 @@ TC-004_Thai_Day_Spans_0300_To_2300_Across_Two_UTC_Dates
 TC-005_First_Of_Month_At_0300_Thai_Counts_In_That_Thai_Month
     [Documentation]    03:00 Thai on the 1st is 20:00Z on the LAST day of the previous month.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Seed Reservation At Thai Hour    ${dynamic_id}    ${dynamic_id}    3    40    month
     Create Session    api    ${BASE_API_URL}
@@ -159,7 +159,7 @@ TC-005_First_Of_Month_At_0300_Thai_Counts_In_That_Thai_Month
 TC-006_Full_Thai_Month_Pays_Out_Normally
     [Documentation]    R10 arithmetic is unchanged by the window shift.
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     FOR    ${i}    IN RANGE    10
         ${res_id}=    Evaluate    ${dynamic_id} + ${i}
@@ -186,7 +186,7 @@ TC-006_Full_Thai_Month_Pays_Out_Normally
 
 TC-007_Daily_Summary_Still_Rejects_Malformed_Date
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    date=31-07-2026
@@ -198,7 +198,7 @@ TC-007_Daily_Summary_Still_Rejects_Malformed_Date
 
 TC-008_Daily_Summary_Still_Rejects_Missing_Date
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Create Session    api    ${BASE_API_URL}
     ${empty_payload}=    Create Dictionary
@@ -210,7 +210,7 @@ TC-008_Daily_Summary_Still_Rejects_Missing_Date
 
 TC-009_Payout_Still_Rejects_Malformed_Month
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Create Session    api    ${BASE_API_URL}
     ${payload}=    Create Dictionary    month=2026/08
@@ -222,7 +222,7 @@ TC-009_Payout_Still_Rejects_Malformed_Month
 
 TC-010_Payout_Still_Rejects_Missing_Month
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Seed Owner Chain    ${dynamic_id}
     Create Session    api    ${BASE_API_URL}
     ${empty_payload}=    Create Dictionary

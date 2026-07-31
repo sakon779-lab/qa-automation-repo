@@ -112,11 +112,11 @@ TC-010_Email_XSS_Accepted
 
 *** Keywords ***
 Unique Email
-    ${n}=    Evaluate    random.randint(1000000, 9999999)    modules=random
+    ${n}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     RETURN    owner_${n}@test.com
 
 Unique Name
-    ${n}=    Evaluate    random.randint(1000000, 9999999)    modules=random
+    ${n}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     RETURN    Owner_${n}
 
 Delete Owner By Email

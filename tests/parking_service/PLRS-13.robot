@@ -58,10 +58,10 @@ Seed Reservation
     ...                reservation itself. Returns a dict of the ids for the test + teardown.
     [Arguments]    ${status}    ${lock_offset_sec}
     Connect To Global Database
-    ${d_id}=    Evaluate    random.randint(100000, 999999)    modules=random
-    ${l_id}=    Evaluate    random.randint(100000, 999999)    modules=random
-    ${s_id}=    Evaluate    random.randint(100000, 999999)    modules=random
-    ${r_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${d_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
+    ${l_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
+    ${s_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
+    ${r_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${d_id}, 'Robot Driver', 'robot_${d_id}@test.plrs')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${l_id}, 'Robot Lot', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${s_id}, ${l_id}, 'R-1', true)

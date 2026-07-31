@@ -59,7 +59,7 @@ TC-003_Verify_API_Returns_409_For_Already_Completed_Session
 TC-004_Verify_API_Returns_404_For_Unknown_Session
     [Documentation]    Verify API returns 404 when checking out an unknown session
     # --- EXERCISE PHASE ---
-    ${non_existent_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${non_existent_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${str_non_existent_id}=    Convert To String    ${non_existent_id}
     ${headers}=    Create Dictionary    X-Test-Id=${str_non_existent_id}
     ${resp}=    POST On Session    api    /sessions/${non_existent_id}/checkout    json={}    headers=${headers}    expected_status=any
@@ -72,7 +72,7 @@ TC-004_Verify_API_Returns_404_For_Unknown_Session
 *** Keywords ***
 Setup_Test_Environment
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${str_dynamic_id}=    Convert To String    ${dynamic_id}
     ${dynamic_id_plus_one}=    Evaluate    ${dynamic_id} + 1    modules=builtins
     
@@ -94,7 +94,7 @@ Setup_Test_Environment
 
 Setup_Test_Environment_For_TC_003
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${str_dynamic_id}=    Convert To String    ${dynamic_id}
     
     # --- SETUP PHASE ---

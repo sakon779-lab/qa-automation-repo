@@ -10,7 +10,7 @@ TC-001_Verify_Penalty_For_Session_Checked_Out_40_Min_Past_End
     
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver 1', 'driver_${dynamic_id}@test.com')
@@ -45,7 +45,7 @@ TC-002_Verify_Minimum_Penalty_Band
     
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver 1', 'driver_${dynamic_id}@test.com')
@@ -80,7 +80,7 @@ TC-003_Verify_No_Penalty_When_Checkout_Is_Inside_The_10_Min_Grace
     
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver 1', 'driver_${dynamic_id}@test.com')
@@ -119,7 +119,7 @@ TC-004_Verify_API_Returns_404_When_Session_Id_Not_Found
     Create Session    api    ${BASE_API_URL}
     
     # --- 2. EXERCISE PHASE ---
-    ${non_existent_id}=    Evaluate    random.randint(1000, 9999) + 10000    modules=random
+    ${non_existent_id}=    Evaluate    random.randint(1000000, 2000000000) + 10000    modules=random
     ${payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /sessions/${non_existent_id}/penalty    json=${payload}    expected_status=any
     
@@ -136,7 +136,7 @@ TC-005_Verify_409_When_Overstaying_But_Warning_Was_Never_Sent
     
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver 1', 'driver_${dynamic_id}@test.com')
@@ -166,7 +166,7 @@ TC-006_Verify_Exact_15_Min_Block_Boundary
     
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver 1', 'driver_${dynamic_id}@test.com')
@@ -201,7 +201,7 @@ TC-007_Verify_API_Is_Idempotent_Per_Session
     
     # --- 1. SETUP PHASE ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(1000, 9999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner 1', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Driver 1', 'driver_${dynamic_id}@test.com')

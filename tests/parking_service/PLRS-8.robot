@@ -62,7 +62,7 @@ Seed Availability Lot
     ...                ACTIVE spots with a now-covering SOFT_LOCKED reservation. Dynamic ids.
     [Arguments]    ${active}    ${inactive}    ${held}
     Connect To Global Database
-    ${base}=    Evaluate    random.randint(1000000, 9000000)    modules=random
+    ${base}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${o_id}=    Evaluate    ${base} + 1
     ${d_id}=    Evaluate    ${base} + 2
     ${l_id}=    Evaluate    ${base} + 3

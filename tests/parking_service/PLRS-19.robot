@@ -10,7 +10,7 @@ TC-001_Verify_API_Sends_Warning_And_Sets_Warned_At_For_An_Overstaying_Session_Th
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Test Driver', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'Test Lot', 5.00, '1234')
@@ -49,7 +49,7 @@ TC-002_Verify_API_Does_Not_Send_A_Second_Warning_For_An_Overstaying_Session_That
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Test Driver', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'Test Lot', 5.00, '1234')
@@ -88,7 +88,7 @@ TC-003_Verify_API_Returns_404_When_Session_Does_Not_Exist
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
 
     # Create Sessions
     Create Session    api    ${BASE_API_URL}
@@ -98,7 +98,7 @@ TC-003_Verify_API_Returns_404_When_Session_Does_Not_Exist
     Arm Mock Expectation    POST    /notify    200    {}
 
     # --- 2. EXERCISE PHASE (From Steps) ---
-    ${non_existent_id}=    Evaluate    random.randint(10000, 99999)    modules=random
+    ${non_existent_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     ${str_id}=       Convert To String    ${non_existent_id}
     ${headers}=      Create Dictionary    X-Test-Id=${str_id}
     ${resp}=         POST On Session    api    /sessions/${non_existent_id}/warn    json={}    headers=${headers}    expected_status=any
@@ -117,7 +117,7 @@ TC-004_Verify_API_Returns_400_When_Session_Is_Not_Overstaying
 
     # --- 1. SETUP PHASE (From PreRequisites) ---
     Connect To Global Database
-    ${dynamic_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Test Owner', 'owner_${dynamic_id}@test.com', true)
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Test Driver', 'driver_${dynamic_id}@test.com')
     Execute Sql String    INSERT INTO lots (id, owner_id, name, hourly_rate, wall_code) VALUES (${dynamic_id}, ${dynamic_id}, 'Test Lot', 5.00, '1234')

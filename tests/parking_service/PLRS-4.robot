@@ -118,7 +118,7 @@ Seed Owner
     [Documentation]    Insert one owner with a unique id + email (owners.email is NOT NULL); keep the
     ...                DB connection open for the test; return the owner id.
     Connect To Global Database
-    ${owner_id}=    Evaluate    random.randint(100000, 999999)    modules=random
+    ${owner_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
     Execute Sql String    INSERT INTO owners (id, name, email) VALUES (${owner_id}, 'Owner A', 'owner_${owner_id}@test.com')
     RETURN    ${owner_id}
 
