@@ -20,6 +20,13 @@ TC-001_Verify_the_booking_page_renders_the_lot_name_and_its_hourly_rate
     Should Contain    ${body}    จองที่จอด
     Should Contain    ${body}    Web Lot
     Should Contain    ${body}    ฿40/ชม.
+    # htmx wiring — a typo here renders every word above and still 200s, while the fragment is
+    # swapped into nothing. Assert the trigger AND that its target element actually exists.
+    Should Contain    ${body}    hx-post="/web/bookings"
+    Should Contain    ${body}    hx-target="#result"
+    Should Contain    ${body}    id="result"
+    Should Contain    ${body}    hx-target="#estimate"
+    Should Contain    ${body}    id="estimate"
     [Teardown]    Cleanup Test Case Data    ${dynamic_id}
 
 TC-002_Verify_the_booking_page_shows_the_not_found_notice_for_an_unknown_lot
@@ -92,6 +99,9 @@ TC-006_Verify_a_successful_booking_renders_the_price_the_300s_lock_countdown_and
     Should Contain    ${body}    ฿40
     Should Contain    ${body}    ยืนยันจ่าย
     Should Contain    ${body}    300
+    # the confirm button must be wired back to the same swap target (see TC-001)
+    Should Contain    ${body}    /confirm
+    Should Contain    ${body}    hx-target="#result"
     ${db_count_result}=    Query    SELECT count(*) FROM reservations WHERE driver_id = ${dynamic_id} AND status = 'SOFT_LOCKED'
     Should Be Equal As Integers    ${db_count_result[0][0]}    1
     [Teardown]    Cleanup Test Case Data    ${dynamic_id}
