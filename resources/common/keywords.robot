@@ -10,6 +10,17 @@ Library          RequestsLibrary
 Connect To Global Database
     [Documentation]    Connect to the target project's PostgreSQL using the DB_* variables the
     ...                project's config.robot defined.
+    ...
+    ...                Closes any connection still open first. DatabaseLibrary keeps ONE current
+    ...                connection, so opening a second over it logs "Overwriting not closed
+    ...                connection" as a run-level WARNING — the report then shows an Execution
+    ...                Errors block on a fully green run, which trains everyone to ignore that
+    ...                block. Any suite whose teardown was skipped (a failure before [Teardown],
+    ...                or a case that simply never disconnects) leaks one into the next test, so
+    ...                making the connect itself idempotent fixes it for every suite at once
+    ...                rather than auditing fifteen of them. Safe because tests run sequentially:
+    ...                a connection still open here belongs to a test that has already finished.
+    Run Keyword And Ignore Error    Disconnect From Database
     Connect To Database    psycopg2    ${DB_NAME}    ${DB_USER}    ${DB_PASS}    ${DB_HOST}    ${DB_PORT}
 
 Disconnect From Global Database
