@@ -19,6 +19,13 @@ TC-001_Verify_API_Marks_Confirmed_Reservation_As_No_Show_Outside_Grace_Window
 
     Create Global API Session
 
+    # `marked` counts EVERY eligible reservation in the database, not just this test's. Asserting
+    # the literal 1 made the case depend on the whole QA database being pristine: any leftover
+    # CONFIRMED row past its grace window — a suite killed mid-run, a crashed teardown, a test
+    # running in parallel — is swept too, and the case fails 3 != 1 with nothing wrong in the
+    # product. Assert instead that `marked` tells the TRUTH about what this sweep changed, and
+    # that this reservation is one of the rows it changed.
+    ${before}=    Query    SELECT count(*) FROM reservations WHERE status = 'NO_SHOW'
 
     # Steps
     ${payload}=    Create Dictionary
@@ -27,7 +34,10 @@ TC-001_Verify_API_Marks_Confirmed_Reservation_As_No_Show_Outside_Grace_Window
     # Verification
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}
-    Should Be Equal As Strings    ${json}[marked]    1
+    ${after}=    Query    SELECT count(*) FROM reservations WHERE status = 'NO_SHOW'
+    ${delta}=    Evaluate    ${after[0][0]} - ${before[0][0]}
+    Should Be Equal As Integers    ${json}[marked]    ${delta}
+    Should Be True    ${delta} >= 1
     ${db_count_result}=    Query    SELECT count(*) FROM reservations WHERE id = ${dynamic_id} AND status = 'NO_SHOW' AND forfeited = true
     Should Be Equal As Integers    ${db_count_result[0][0]}    1
 
@@ -193,6 +203,11 @@ TC-007_Verify_API_Marks_Multiple_Eligible_Reservations_As_No_Show_In_One_Sweep
 
     Create Global API Session
 
+    # Same reason as TC-001: `marked` is a global counter. The point of THIS case — one sweep marks
+    # several rows and skips the checked-in one — is asserted on the seeded rows themselves, so the
+    # exclusion is still pinned now that the literal 2 is gone.
+    ${before}=    Query    SELECT count(*) FROM reservations WHERE status = 'NO_SHOW'
+
     # Steps
     ${payload}=    Create Dictionary
     ${resp}=    POST On Session    api    /bookings/sweep-noshows    json=${payload}    expected_status=any
@@ -200,9 +215,13 @@ TC-007_Verify_API_Marks_Multiple_Eligible_Reservations_As_No_Show_In_One_Sweep
     # Verification
     Status Should Be    200    ${resp}
     ${json}=    Set Variable    ${resp.json()}
-    Should Be Equal As Strings    ${json}[marked]    2
+    ${after}=    Query    SELECT count(*) FROM reservations WHERE status = 'NO_SHOW'
+    ${delta}=    Evaluate    ${after[0][0]} - ${before[0][0]}
+    Should Be Equal As Integers    ${json}[marked]    ${delta}
     ${db_count_result}=    Query    SELECT count(*) FROM reservations WHERE id IN (${dynamic_id}, ${dynamic_id} + 1) AND status = 'NO_SHOW' AND forfeited = true
     Should Be Equal As Integers    ${db_count_result[0][0]}    2
+    ${skipped}=    Query    SELECT status FROM reservations WHERE id = ${dynamic_id} + 2
+    Should Be Equal As Strings    ${skipped[0][0]}    CONFIRMED
 
     # Teardown
     [Teardown]    Cleanup Test Case With Sessions    ${dynamic_id}
