@@ -17,7 +17,7 @@ TC-001_Payout_Computed_And_Transferred_Worked_Example_1
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'PY-1', true);
     FOR    ${i}    IN RANGE    10
         ${rid}=    Evaluate    ${dynamic_id} + ${i}
-        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '${i+1} hour', date_trunc('month', NOW()) + INTERVAL '${i+3} hour', 'COMPLETED', 100);
+        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+1} hour', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+3} hour', 'COMPLETED', 100);
     END
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Global API Session
@@ -52,7 +52,7 @@ TC-002_Negative_Net_Floors_Payout_To_Zero_No_Payment_Worked_Example_2
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'PY-1', true);
     FOR    ${i}    IN RANGE    5
         ${rid}=    Evaluate    ${dynamic_id} + ${i}
-        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '${i+1} hour', date_trunc('month', NOW()) + INTERVAL '${i+3} hour', 'COMPLETED', 20);
+        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+1} hour', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+3} hour', 'COMPLETED', 20);
     END
     Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
@@ -82,7 +82,7 @@ TC-003_Exact_Break_Even_Payout_Zero_Not_Owing
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'PY-1', true);
     FOR    ${i}    IN RANGE    5
         ${rid}=    Evaluate    ${dynamic_id} + ${i}
-        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '${i+1} hour', date_trunc('month', NOW()) + INTERVAL '${i+3} hour', 'COMPLETED', 70);
+        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+1} hour', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+3} hour', 'COMPLETED', 70);
     END
     Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
@@ -106,9 +106,9 @@ TC-004_Penalties_Attached_To_The_Months_Reservations_Count_Into_Gross
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Payout Driver', 'drv_${dynamic_id}@x.com');
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Payout Lot', ${dynamic_id}, 40, '1234');
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'PY-1', true);
-    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '1 hour', date_trunc('month', NOW()) + INTERVAL '3 hour', 'COMPLETED', 450);
+    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '1 hour', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '3 hour', 'COMPLETED', 450);
     ${rid2}=    Evaluate    ${dynamic_id} + 1
-    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid2}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '2 hour', date_trunc('month', NOW()) + INTERVAL '4 hour', 'COMPLETED', 450);
+    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid2}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '2 hour', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '4 hour', 'COMPLETED', 450);
     Execute Sql String    INSERT INTO penalties (id, reservation_id, amount, reason) VALUES (${dynamic_id}, ${dynamic_id}, 100, 'OVERSTAY');
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Global API Session
@@ -136,9 +136,9 @@ TC-005_Reservations_Outside_The_Requested_Month_Are_Excluded_From_Gross
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_id}, 'Payout Driver', 'drv_${dynamic_id}@x.com');
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Payout Lot', ${dynamic_id}, 40, '1234');
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'PY-1', true);
-    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '1 hour', date_trunc('month', NOW()) + INTERVAL '3 hour', 'COMPLETED', 800);
+    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${dynamic_id}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '1 hour', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '3 hour', 'COMPLETED', 800);
     ${rid2}=    Evaluate    ${dynamic_id} + 1
-    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid2}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) - INTERVAL '10 day', date_trunc('month', NOW()) - INTERVAL '10 day' + INTERVAL '2 hour', 'COMPLETED', 900);
+    Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid2}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' - INTERVAL '10 day', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' - INTERVAL '10 day' + INTERVAL '2 hour', 'COMPLETED', 900);
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Global API Session
     ${tz}=    Evaluate    datetime.timezone(datetime.timedelta(hours=7))    modules=datetime
@@ -163,7 +163,7 @@ TC-006_Subscription_Amount_Comes_From_The_Owner_Row_Not_A_Constant
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'PY-1', true);
     FOR    ${i}    IN RANGE    10
         ${rid}=    Evaluate    ${dynamic_id} + ${i}
-        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW()) + INTERVAL '${i+1} hour', date_trunc('month', NOW()) + INTERVAL '${i+3} hour', 'COMPLETED', 100);
+        Execute Sql String    INSERT INTO reservations (id, driver_id, spot_id, lot_id, start_time, end_time, status, price) VALUES (${rid}, ${dynamic_id}, ${dynamic_id}, ${dynamic_id}, date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+1} hour', date_trunc('month', NOW() AT TIME ZONE 'Asia/Bangkok') AT TIME ZONE 'Asia/Bangkok' + INTERVAL '${i+3} hour', 'COMPLETED', 100);
     END
     Arm Mock Expectation    POST    /transfer    200    {"status": "SUCCESS"}
     Create Global API Session
