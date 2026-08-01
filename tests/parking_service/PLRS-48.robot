@@ -130,8 +130,14 @@ TC-011_Verify_GET_web_sessions_non_existent_404
     Should Contain    ${body}    Session not found
 
 TC-012_Verify_GET_overstay_fragment_completed_overstaying
-    [Documentation]    Verify GET /web/sessions/{id}/overstay-fragment shows 'เกินมา 10 นาที' for a COMPLETED overstaying session
-    ${driver}    ${lot}    ${spot}    ${id}=    Seed Session Fixture    COMPLETED    -65 minutes    -20 minutes 30 seconds    -45 minutes    -30 seconds
+    [Documentation]    Verify GET /web/sessions/{id}/overstay-fragment shows 'เกินมา 10 นาที' for a COMPLETED overstaying session.
+    ...                end_time is -20:00 (the CSV's value), NOT -20 minutes 30 seconds. Postgres reads
+    ...                that as -19:30 (only the first field takes the sign), which puts billable_min
+    ...                exactly on 9.0 — and ceil() then depends on NOW() advancing between the two
+    ...                INSERTs. It does today only because each statement commits separately; inside one
+    ...                transaction NOW() is constant, billable_min is 9, and the case fails. -20:00 keeps
+    ...                a 30-second margin either way.
+    ${driver}    ${lot}    ${spot}    ${id}=    Seed Session Fixture    COMPLETED    -65 minutes    -20 minutes    -45 minutes    -30 seconds
     ${resp}=    GET On Session    api    /web/sessions/${id}/overstay-fragment    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
