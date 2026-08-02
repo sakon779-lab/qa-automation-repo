@@ -59,22 +59,33 @@ pipeline {
             }
         }
 
-        // The only addition to the original script. `rfbrowser init` fetches a node runtime plus
-        // browser binaries — hundreds of megabytes — into the venv, which lives on a persistent
-        // volume, so this runs ONCE and every later build takes the skip. Chromium only: firefox
-        // and webkit would triple the download for browsers no suite asks for.
+        // The only addition to the original script, and it can NEVER fail the build.
+        //
+        // `rfbrowser init` needs npm, and this Jenkins image has no Node — build #45 died on
+        // "FileNotFoundError: 'npm'" and took a working pipeline down with it, in exchange for a
+        // capability no suite uses yet. Until a browser suite actually exists, a missing runtime
+        // is a fact to report, not a reason to fail: the API tests are what this job is for.
+        //
+        // When browser tests do arrive, install Node in the Jenkins image and this stage starts
+        // working with no change here. The download (node modules + chromium, hundreds of MB)
+        // lands in the venv on a persistent volume, so it happens once and later builds skip it.
+        // Chromium only — firefox and webkit would triple it for browsers nothing asks for.
         stage('Setup Browser Runtime') {
             steps {
                 sh '''
                 VENV_DIR="/var/jenkins_home/olympus_venv"
                 . "$VENV_DIR/bin/activate"
-                BROWSER_DIR="$(python -c 'import Browser,os;print(os.path.dirname(Browser.__file__))' 2>/dev/null)"
+                BROWSER_DIR="$(python -c 'import Browser,os;print(os.path.dirname(Browser.__file__))' 2>/dev/null || true)"
                 if [ -z "$BROWSER_DIR" ]; then
-                    echo "robotframework-browser not installed yet — skipping"
+                    echo "ℹ️  robotframework-browser not installed — browser tests cannot run"
                 elif [ -d "$BROWSER_DIR/wrapper/node_modules" ]; then
-                    echo "browser runtime already initialised — skipping download"
+                    echo "✅ browser runtime already initialised — skipping download"
+                elif ! command -v npm >/dev/null 2>&1; then
+                    echo "⚠️  no npm in this image — SKIPPING browser runtime."
+                    echo "    Browser-level suites will not run until Node is installed here."
+                    echo "    Every API suite is unaffected; this is not a build failure."
                 else
-                    rfbrowser init chromium
+                    rfbrowser init chromium || echo "⚠️  rfbrowser init failed — browser suites will not run"
                 fi
                 '''
             }
