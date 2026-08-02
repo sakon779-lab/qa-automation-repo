@@ -26,6 +26,8 @@ Cleanup Parking Test Data
     IF    '${id}' != ''
         ${id2}=    Evaluate    ${id} + 1
         Run Keyword And Ignore Error    Execute Sql String    DELETE FROM penalties WHERE reservation_id = ${id}
+        # push_subscriptions references sessions, so it goes before them (PLRS-50).
+        Run Keyword And Ignore Error    Execute Sql String    DELETE FROM push_subscriptions WHERE session_id IN (${id}, ${id2})
         Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE reservation_id = ${id}
         Run Keyword And Ignore Error    Execute Sql String    DELETE FROM sessions WHERE id IN (${id}, ${id2})
         Run Keyword And Ignore Error    Execute Sql String    DELETE FROM reservations WHERE id = ${id}
