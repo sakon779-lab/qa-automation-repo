@@ -15,3 +15,11 @@ psycopg2-binary            # Driver สำหรับ PostgreSQL
 
 # --- Mocking (Optional: ถ้าเขียน Custom Library คุม Mock) ---
 mockserver-client          # Python Client สำหรับ MockServer (ถ้ามี)
+
+# --- Browser (PLRS-50 ขึ้นไป: เทสที่ต้องรันในเบราว์เซอร์จริง) ---
+# pip ลง "ตัว library" อย่างเดียว — node runtime กับไฟล์เบราว์เซอร์มาจาก `rfbrowser init chromium`
+# ซึ่งเป็นคนละขั้น และเป็นขั้นที่หนัก (หลายร้อย MB). Jenkins ทำให้ในสเตจ Setup Browser Runtime
+# โดยลงใน venv ที่อยู่บน volume ถาวร → โหลดครั้งเดียวจริงๆ ครั้งต่อไปข้าม.
+# เครื่อง dev: รัน `rfbrowser init chromium` ครั้งเดียวพอ (Playwright cache ที่ %LOCALAPPDATA%\ms-playwright
+# ใช้ร่วมกันทุกโปรเจกต์). ห้ามลง firefox/webkit ถ้าไม่มี suite ไหนขอ — โหลดเพิ่มอีกสองเท่าโดยเปล่าประโยชน์.
+robotframework-browser
