@@ -52,10 +52,13 @@ TC-001_Verify_first_warn_with_registered_push_subscription_sends_real_web_push
     ${db_result}=    Query    SELECT warned_at FROM sessions WHERE id = ${dynamic_id}
     Should Not Be Equal As Strings    ${db_result[0][0]}    None
     
-    # Verify MockServer recorded POST to push endpoint
+    # Verify MockServer recorded POST to push endpoint — WITH the warning text, per the
+    # CSV's Post-Assertion. "A request arrived" alone would pass a push carrying the
+    # wrong (or no) message.
     ${requests}=    Get Mock Requests For Path    POST    /push/${dynamic_id}
     Should Not Be Empty    ${requests}
-    
+    Should Contain    ${requests.__str__()}    Overstay Warning
+
     # --- 4. TEARDOWN PHASE ---
     [Teardown]    Cleanup Parking Test Data    ${dynamic_id}
 
@@ -266,11 +269,13 @@ TC-007_Verify_multiple_subscriptions_each_receive_push_notification
     ${db_result}=    Query    SELECT count(*) FROM push_subscriptions WHERE session_id = ${dynamic_id}
     Should Be Equal As Integers    ${db_result[0][0]}    2
     
-    # Verify MockServer recorded POST to both push endpoints
+    # Verify MockServer recorded POST to both push endpoints — each with the warning text
     ${requests1}=    Get Mock Requests For Path    POST    /push/${dynamic_id}_1
     Should Not Be Empty    ${requests1}
+    Should Contain    ${requests1.__str__()}    Overstay Warning
     ${requests2}=    Get Mock Requests For Path    POST    /push/${dynamic_id}_2
     Should Not Be Empty    ${requests2}
+    Should Contain    ${requests2.__str__()}    Overstay Warning
     
     # --- 4. TEARDOWN PHASE ---
     [Teardown]    Cleanup Parking Test Data    ${dynamic_id}
