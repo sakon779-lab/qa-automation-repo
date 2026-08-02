@@ -361,10 +361,24 @@ TC-016_Verify_POST_bookings_returns_inline_error_when_no_free_spot
     [Teardown]    Cleanup Booking Test Data    ${dynamic_id}
 
 TC-017_Verify_GET_bookings_new_renders_form_with_checkbox_and_htmx_wiring
-    [Documentation]    Verify GET /web/bookings/new renders the booking form with the overnight checkbox and correct htmx wiring
+    [Documentation]    Verify GET /web/bookings/new renders the booking form with the overnight
+    ...                checkbox and the correct htmx wiring. The lot is SEEDED here and named in
+    ...                the query string: calling the page with no lot_id falls back to lot 1, which
+    ...                is only the demo lot until enough redeploys move it (it reached id 8, and
+    ...                this case failed on Jenkins #51 after two green builds — the page was
+    ...                rendering "ไม่พบลานจอด" and only the <title> anchor still matched).
+    Connect To Global Database
+    ${dynamic_id}=    Evaluate    random.randint(1000000, 2000000000)    modules=random
+    Execute Sql String    INSERT INTO owners (id, name, email, subscription_active) VALUES (${dynamic_id}, 'Owner TC017', 'owner_${dynamic_id}@test.com', true)
+    Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Lot TC017', ${dynamic_id}, 40, '1234')
+    Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'A-1', true)
     Create Global API Session
 
-    ${resp}=    GET On Session    api    /web/bookings/new    expected_status=any
+    # params=, not "?lot_id=..." in the path: Robot reads any token containing "=" as a NAMED
+    # argument, so the whole URL would be swallowed as a kwarg and the call fails with
+    # "missing 1 required positional argument: 'url'".
+    ${params}=    Create Dictionary    lot_id=${dynamic_id}
+    ${resp}=    GET On Session    api    /web/bookings/new    params=${params}    expected_status=any
 
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -377,8 +391,18 @@ TC-017_Verify_GET_bookings_new_renders_form_with_checkbox_and_htmx_wiring
     Should Contain    ${body}    hx-target="#result"
     Should Contain    ${body}    id="result"
     Should Contain    ${body}    hx-trigger="change"
+    # the page really rendered the LOT, not the "ไม่พบลานจอด" fallback
+    Should Contain    ${body}    Lot TC017
+    [Teardown]    Cleanup TC017 Data    ${dynamic_id}
 
 *** Keywords ***
+Cleanup TC017 Data
+    [Arguments]    ${id}
+    Run Keyword And Ignore Error    Execute Sql String    DELETE FROM spots WHERE id = ${id}
+    Run Keyword And Ignore Error    Execute Sql String    DELETE FROM lots WHERE id = ${id}
+    Run Keyword And Ignore Error    Execute Sql String    DELETE FROM owners WHERE id = ${id}
+    Run Keyword And Ignore Error    Disconnect From Global Database
+
 Cleanup Booking Test Data
     [Arguments]    ${id}
     Run Keyword And Ignore Error    Execute Sql String    DELETE FROM reservations WHERE driver_id = ${id}
