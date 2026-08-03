@@ -4,6 +4,11 @@ Library    Collections
 Library    DatabaseLibrary
 Resource   ../../resources/projects/parking_service/config.robot
 
+
+*** Variables ***
+${BOOK_DAY}        2026-09-01
+${BOOK_DAY_NEXT}   2026-09-02
+
 *** Test Cases ***
 TC-001_Booking_Free_Spot_Returns_201
     [Documentation]    Booking a free spot for a 2-hour window returns 201 SOFT_LOCKED with price = ceil(2h)*40 = 80
@@ -22,8 +27,8 @@ TC-001_Booking_Free_Spot_Returns_201
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=10:00
-    ...            end_time=12:00
+    ...            start_at=${BOOK_DAY}T10:00:00
+    ...            end_at=${BOOK_DAY}T12:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -57,8 +62,8 @@ TC-002_Booking_30_Minute_Window_Returns_40
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=10:00
-    ...            end_time=10:30
+    ...            start_at=${BOOK_DAY}T10:00:00
+    ...            end_at=${BOOK_DAY}T10:30:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -86,15 +91,15 @@ TC-003_No_Free_Spot_Available_Returns_409
     Execute Sql String    INSERT INTO drivers (id, name, email) VALUES (${dynamic_driver_id}, 'Driver', 'driver_${dynamic_driver_id}@x.com')
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${dynamic_lot_id}, 'Lot A', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_spot_id}, ${dynamic_lot_id}, 'A-1', true)
-    Execute Sql String    INSERT INTO reservations (driver_id, spot_id, lot_id, start_time, end_time, status, lock_expires_at) VALUES (${dynamic_driver_id}, ${dynamic_spot_id}, ${dynamic_lot_id}, '1900-01-01 10:00:00', '1900-01-01 12:00:00', 'SOFT_LOCKED', NOW() + INTERVAL '300 seconds')
+    Execute Sql String    INSERT INTO reservations (driver_id, spot_id, lot_id, start_time, end_time, status, lock_expires_at) VALUES (${dynamic_driver_id}, ${dynamic_spot_id}, ${dynamic_lot_id}, '${BOOK_DAY} 10:00:00', '${BOOK_DAY} 12:00:00', 'SOFT_LOCKED', NOW() + INTERVAL '300 seconds')
     Create Global API Session
 
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=10:00
-    ...            end_time=12:00
+    ...            start_at=${BOOK_DAY}T10:00:00
+    ...            end_at=${BOOK_DAY}T12:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -122,8 +127,8 @@ TC-004_Start_Time_After_End_Time_Returns_400
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=12:00
-    ...            end_time=10:00
+    ...            start_at=${BOOK_DAY}T12:00:00
+    ...            end_at=${BOOK_DAY}T10:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -151,8 +156,8 @@ TC-005_Start_Time_Equals_End_Time_Returns_400
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=10:00
-    ...            end_time=10:00
+    ...            start_at=${BOOK_DAY}T10:00:00
+    ...            end_at=${BOOK_DAY}T10:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -174,8 +179,8 @@ TC-006_Driver_ID_Missing_Returns_400
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=10:00
-    ...            end_time=12:00
+    ...            start_at=${BOOK_DAY}T10:00:00
+    ...            end_at=${BOOK_DAY}T12:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -197,8 +202,8 @@ TC-007_Lot_ID_Missing_Returns_400
     # --- 2. EXERCISE PHASE (From Steps) ---
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
-    ...            start_time=10:00
-    ...            end_time=12:00
+    ...            start_at=${BOOK_DAY}T10:00:00
+    ...            end_at=${BOOK_DAY}T12:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -222,7 +227,7 @@ TC-008_Start_Time_Missing_Returns_400
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            end_time=12:00
+    ...            end_at=${BOOK_DAY}T12:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -246,7 +251,7 @@ TC-009_End_Time_Missing_Returns_400
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=10:00
+    ...            start_at=${BOOK_DAY}T10:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
@@ -274,14 +279,14 @@ TC-010_SQL_Injection_Rejected_Safely
     ${payload}=    Create Dictionary
     ...            driver_id=${dynamic_driver_id}
     ...            lot_id=${dynamic_lot_id}
-    ...            start_time=''; DROP TABLE drivers;--
-    ...            end_time=12:00
+    ...            start_at=''; DROP TABLE drivers;--
+    ...            end_at=${BOOK_DAY}T12:00:00
     ${resp}=       POST On Session    api    /bookings    json=${payload}    expected_status=any
 
     # --- 3. VERIFICATION PHASE (From ExpectedResult & Post-Assertions) ---
     Status Should Be    400    ${resp}
     ${json}=            Set Variable    ${resp.json()}
-    Should Be Equal As Strings    ${json}[detail]    Start time must be before end time
+    Should Be Equal As Strings    ${json}[detail]    start_at must be an ISO 8601 datetime
 
     # Post-Assertion from CSV
     ${db_count_result}=    Query    SELECT count(*) FROM drivers WHERE id = ${dynamic_driver_id}

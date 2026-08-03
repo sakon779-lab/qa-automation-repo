@@ -4,6 +4,11 @@ Library    Collections
 Library    DatabaseLibrary
 Resource   ../../resources/projects/parking_service/config.robot
 
+
+*** Variables ***
+${BOOK_DAY}        2026-09-01
+${BOOK_DAY_NEXT}   2026-09-02
+
 *** Test Cases ***
 TC-001_Verify_the_booking_page_renders_the_lot_name_and_its_hourly_rate
     [Documentation]    Verify the booking page renders the lot name and its hourly rate
@@ -46,7 +51,7 @@ TC-003_Verify_the_price_estimate_ceils_a_half_hour_to_one_hour_R3_10_00_10_30_at
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Create Global API Session
-    ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_time=10:00&end_time=10:30    expected_status=any
+    ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_at=${BOOK_DAY}T10:00:00&end_at=${BOOK_DAY}T10:30:00    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
     Should Contain    ${body}    ราคาประเมิน ฿40
@@ -61,7 +66,7 @@ TC-004_Verify_the_price_estimate_charges_3_hours_for_a_2_5_hour_window_R3_13_00_
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Create Global API Session
-    ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_time=13:00&end_time=15:30    expected_status=any
+    ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_at=${BOOK_DAY}T13:00:00&end_at=${BOOK_DAY}T15:30:00    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
     Should Contain    ${body}    ราคาประเมิน ฿120
@@ -76,7 +81,7 @@ TC-005_Verify_the_price_estimate_shows_the_contract_error_when_end_time_precedes
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Create Global API Session
-    ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_time=10:30&end_time=10:00    expected_status=any
+    ${resp}=    GET On Session    api    url=/web/bookings/estimate?lot_id=${dynamic_id}&start_at=${BOOK_DAY}T10:30:00&end_at=${BOOK_DAY}T10:00:00    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
     Should Contain    ${body}    Start time must be before end time
@@ -91,7 +96,7 @@ TC-006_Verify_a_successful_booking_renders_the_price_the_300s_lock_countdown_and
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Create Global API Session
-    ${form}=    Create Dictionary    driver_id=${dynamic_id}    lot_id=${dynamic_id}    start_time=10:00    end_time=10:30
+    ${form}=    Create Dictionary    driver_id=${dynamic_id}    lot_id=${dynamic_id}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T10:30:00
     ${resp}=    POST On Session    api    /web/bookings    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -115,7 +120,7 @@ TC-007_Verify_the_booking_fragment_shows_the_contract_error_when_the_lot_has_no_
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', false)
     Create Global API Session
-    ${form}=    Create Dictionary    driver_id=${dynamic_id}    lot_id=${dynamic_id}    start_time=10:00    end_time=10:30
+    ${form}=    Create Dictionary    driver_id=${dynamic_id}    lot_id=${dynamic_id}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T10:30:00
     ${resp}=    POST On Session    api    /web/bookings    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
@@ -133,7 +138,7 @@ TC-008_Verify_the_booking_fragment_shows_the_contract_error_when_driver_id_is_mi
     Execute Sql String    INSERT INTO lots (id, name, owner_id, hourly_rate, wall_code) VALUES (${dynamic_id}, 'Web Lot', ${dynamic_id}, 40, '1234')
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${dynamic_id}, ${dynamic_id}, 'W-1', true)
     Create Global API Session
-    ${form}=    Create Dictionary    lot_id=${dynamic_id}    start_time=10:00    end_time=10:30
+    ${form}=    Create Dictionary    lot_id=${dynamic_id}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T10:30:00
     ${resp}=    POST On Session    api    /web/bookings    data=${form}    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
