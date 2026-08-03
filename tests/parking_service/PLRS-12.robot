@@ -76,13 +76,18 @@ Assert Both Succeed
         Should Be Equal As Strings    ${r[1]}[status]    SOFT_LOCKED
     END
 
+
+*** Variables ***
+${BOOK_DAY}        2026-09-01
+${BOOK_DAY_NEXT}   2026-09-02
+
 *** Test Cases ***
 TC-001_Same_Day_Booking_Returns_201_Soft_Locked
     [Documentation]    Baseline: POST /bookings 10:00->11:00 -> 201 SOFT_LOCKED price 40.
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
     ${json}=    Set Variable    ${resp.json()}
@@ -94,11 +99,12 @@ TC-001_Same_Day_Booking_Returns_201_Soft_Locked
     [Teardown]    Cleanup Booking Test Data    ${base}
 
 TC-002_Overnight_Booking_Returns_201_Price_80
-    [Documentation]    23:00->01:00 overnight=true -> 201, 2 hours, price 80 (PLRS-55 behaviour kept).
+    [Documentation]    23:00 -> 01:00 the next day = 201, 2 hours, price 80. Crossing
+    ...                midnight needs no flag now — it is an ordinary window that names both of its days.
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=23:00    end_time=01:00    overnight=${TRUE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_at=${BOOK_DAY}T23:00:00    end_at=${BOOK_DAY_NEXT}T01:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    201    ${resp}
     ${json}=    Set Variable    ${resp.json()}
@@ -112,25 +118,10 @@ TC-003_Same_Day_Start_Not_Before_End_Returns_400
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=10:00    end_time=10:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T10:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Start time must be before end time
-    ${count}=    Query    SELECT count(*) FROM reservations WHERE driver_id = ${driver}
-    Should Be Equal As Integers    ${count[0][0]}    0
-    [Teardown]    Cleanup Booking Test Data    ${base}
-
-TC-004_Overnight_Flag_Contradicts_Times_Returns_400
-    [Documentation]    The CSV's original payload (23:00->01:30) is a VALID overnight window —
-    ...                01:30 is not after 23:00 on the clock face, so the API accepts it. A
-    ...                genuine contradiction needs end after start: 08:00->10:00 with the flag.
-    Connect To Global Database
-    ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
-    Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=08:00    end_time=10:00    overnight=${TRUE}
-    ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
-    Status Should Be    400    ${resp}
-    Should Be Equal As Strings    ${resp.json()}[detail]    Overnight booking requires an end time at or before the start time
     ${count}=    Query    SELECT count(*) FROM reservations WHERE driver_id = ${driver}
     Should Be Equal As Integers    ${count[0][0]}    0
     [Teardown]    Cleanup Booking Test Data    ${base}
@@ -139,7 +130,7 @@ TC-005_Missing_Driver_Id_Returns_400
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Driver ID is required
@@ -151,7 +142,7 @@ TC-006_Missing_Lot_Id_Returns_400
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Lot ID is required
@@ -163,7 +154,7 @@ TC-007_Missing_Start_Time_Returns_400
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    end_time=11:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    end_at=${BOOK_DAY}T11:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    Start time is required
@@ -175,7 +166,7 @@ TC-008_Missing_End_Time_Returns_400
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=10:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
     Should Be Equal As Strings    ${resp.json()}[detail]    End time is required
@@ -187,10 +178,10 @@ TC-009_Sql_Injection_In_Start_Time_Returns_400_No_Write
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=10:00'; DROP TABLE reservations;--    end_time=11:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00'; DROP TABLE reservations;--    end_at=${BOOK_DAY}T11:00:00
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    400    ${resp}
-    Should Be Equal As Strings    ${resp.json()}[detail]    Start time must be before end time
+    Should Be Equal As Strings    ${resp.json()}[detail]    start_at must be an ISO 8601 datetime
     ${count}=    Query    SELECT count(*) FROM reservations WHERE driver_id = ${driver}
     Should Be Equal As Integers    ${count[0][0]}    0
     [Teardown]    Cleanup Booking Test Data    ${base}
@@ -201,8 +192,8 @@ TC-010_Race_For_Last_Spot_Exactly_One_Wins
     ...                exactly ONE SOFT_LOCKED row in the database.
     Connect To Global Database
     ${base}    ${driver}    ${driver2}    ${lot}    ${spot}=    Seed Booking Fixture    two_drivers=${TRUE}
-    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
-    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
+    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${results}=    Fire Two Bookings Concurrently    ${p1}    ${p2}
     Assert Exactly One Winner    ${results}    40
     ${count}=    Query    SELECT count(*) FROM reservations WHERE spot_id = ${spot} AND status = 'SOFT_LOCKED'
@@ -210,14 +201,16 @@ TC-010_Race_For_Last_Spot_Exactly_One_Wins
     [Teardown]    Cleanup Booking Test Data    ${base}
 
 TC-011_Race_Overnight_Vs_Next_Morning_Exactly_One_Wins
-    [Documentation]    The case that separates a correct guard from a plausible one: an overnight
-    ...                23:00->01:00 races a same-day 00:30->01:00 (next morning) for the same
-    ...                spot. They overlap only on the CLOCK FACE — as datetime ranges they do not —
-    ...                so a guard keyed on tstzrange would admit both. Exactly one may win.
+    [Documentation]    The case that separates a correct guard from a plausible one: a window
+    ...                running 23:00 into 01:00 the NEXT day races 00:30->01:00 on that next
+    ...                morning for the same spot. PLRS-81 compares windows on the real timeline,
+    ...                where the two genuinely share 00:30-01:00, so exactly one may win. Under
+    ...                the retired clock-face model the second window was read as the SAME day
+    ...                and the pair never met; naming the days is what makes the overlap real.
     Connect To Global Database
     ${base}    ${driver}    ${driver2}    ${lot}    ${spot}=    Seed Booking Fixture    two_drivers=${TRUE}
-    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_time=23:00    end_time=01:00    overnight=${TRUE}
-    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_time=00:30    end_time=01:00    overnight=${FALSE}
+    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_at=${BOOK_DAY}T23:00:00    end_at=${BOOK_DAY_NEXT}T01:00:00
+    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_at=${BOOK_DAY_NEXT}T00:30:00    end_at=${BOOK_DAY_NEXT}T01:00:00
     ${results}=    Fire Two Bookings Concurrently    ${p1}    ${p2}
     ${codes}=    Evaluate    sorted(r[0] for r in $results)
     Should Be Equal    ${codes}    ${{[201, 409]}}
@@ -233,8 +226,8 @@ TC-012_Concurrent_Different_Spots_Same_Lot_Both_Succeed
     Connect To Global Database
     ${base}    ${driver}    ${driver2}    ${lot}    ${spot}=    Seed Booking Fixture    two_drivers=${TRUE}
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${base} + 102, ${lot}, 'A2', true)
-    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
-    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
+    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${results}=    Fire Two Bookings Concurrently    ${p1}    ${p2}
     Assert Both Succeed    ${results}
     ${count}=    Query    SELECT count(*) FROM reservations WHERE lot_id = ${lot} AND status = 'SOFT_LOCKED'
@@ -246,8 +239,8 @@ TC-013_Concurrent_Touching_Windows_Same_Spot_Both_Succeed
     ...                windows) — both must get 201 on the SAME spot even when fired together.
     Connect To Global Database
     ${base}    ${driver}    ${driver2}    ${lot}    ${spot}=    Seed Booking Fixture    two_drivers=${TRUE}
-    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
-    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_time=11:00    end_time=12:00    overnight=${FALSE}
+    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
+    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot}    start_at=${BOOK_DAY}T11:00:00    end_at=${BOOK_DAY}T12:00:00
     ${results}=    Fire Two Bookings Concurrently    ${p1}    ${p2}
     Assert Both Succeed    ${results}
     ${count}=    Query    SELECT count(*) FROM reservations WHERE spot_id = ${spot} AND status = 'SOFT_LOCKED'
@@ -260,7 +253,7 @@ TC-014_Expired_Soft_Lock_Frees_The_Spot
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${first}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    201    ${first}
     Execute Sql String    UPDATE reservations SET lock_expires_at = NOW() - INTERVAL '1 minute' WHERE spot_id = ${spot}
@@ -278,8 +271,8 @@ TC-015_Concurrent_Different_Lots_Both_Succeed
     Execute Sql String    INSERT INTO lots (id, name, hourly_rate) VALUES (${base} + 101, 'Lot ${base} B', 40)
     Execute Sql String    INSERT INTO spots (id, lot_id, code, is_active) VALUES (${base} + 102, ${base} + 101, 'B1', true)
     ${lot_b}=    Evaluate    ${base} + 101
-    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}      start_time=10:00    end_time=11:00    overnight=${FALSE}
-    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot_b}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${p1}=    Create Dictionary    driver_id=${driver}     lot_id=${lot}      start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
+    ${p2}=    Create Dictionary    driver_id=${driver2}    lot_id=${lot_b}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${results}=    Fire Two Bookings Concurrently    ${p1}    ${p2}
     Assert Both Succeed    ${results}
     ${count}=    Query    SELECT count(*) FROM reservations WHERE driver_id IN (${driver}, ${driver2}) AND status = 'SOFT_LOCKED'
@@ -291,7 +284,7 @@ TC-016_Sequential_Second_Booking_Same_Window_Returns_409
     Connect To Global Database
     ${base}    ${driver}    ${d2}    ${lot}    ${spot}=    Seed Booking Fixture
     Create Global API Session
-    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_time=10:00    end_time=11:00    overnight=${FALSE}
+    ${payload}=    Create Dictionary    driver_id=${driver}    lot_id=${lot}    start_at=${BOOK_DAY}T10:00:00    end_at=${BOOK_DAY}T11:00:00
     ${first}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
     Status Should Be    201    ${first}
     ${resp}=    POST On Session    api    /bookings    json=${payload}    expected_status=any
