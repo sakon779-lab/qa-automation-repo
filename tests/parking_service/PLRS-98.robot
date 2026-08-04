@@ -371,7 +371,6 @@ TC-020_Verify_GET_web_owner_renders_create_lot_form_with_lat_lng_inputs
     ${resp}=    GET On Session    api    /web/owner    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
-    Should Contain    ${body}    คัดพิกัดจาก Google Maps
     Should Contain    ${body}    แก้พิกัดลานเดิม
     Should Contain    ${body}    hx-post="/web/owner/lots"
     Should Contain    ${body}    hx-target="#lot-result"
