@@ -78,7 +78,13 @@ pipeline {
                 BROWSER_DIR="$(python -c 'import Browser,os;print(os.path.dirname(Browser.__file__))' 2>/dev/null || true)"
                 if [ -z "$BROWSER_DIR" ]; then
                     echo "ℹ️  robotframework-browser not installed — browser tests cannot run"
-                elif [ -d "$BROWSER_DIR/wrapper/node_modules" ]; then
+                elif [ -d "$BROWSER_DIR/wrapper/node_modules/playwright-core/.local-browsers" ]; then
+                    # .local-browsers only exists once chromium has actually been DOWNLOADED.
+                    # The previous check looked at wrapper/node_modules, which ships inside the pip
+                    # package and is therefore always present — so this stage reported "already
+                    # initialised" on every build and `rfbrowser init` never ran once. The same
+                    # trap caught the dev machine: node_modules there, no browser, and Playwright
+                    # only says so when a test tries to open a page.
                     echo "✅ browser runtime already initialised — skipping download"
                 elif ! command -v npm >/dev/null 2>&1; then
                     echo "⚠️  no npm in this image — SKIPPING browser runtime."
