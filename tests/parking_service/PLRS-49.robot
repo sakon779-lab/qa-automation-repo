@@ -11,7 +11,7 @@ TC-001_Verify_GET_web_owner_renders_page_with_forms_and_htmx
     ${resp}=    GET On Session    api    /web/owner    expected_status=any
     Status Should Be    200    ${resp}
     ${body}=    Set Variable    ${resp.text}
-    Should Contain    ${body}    สมัคร Owner
+    Should Contain    ${body}    สมัครเจ้าของลาน
     Should Contain    ${body}    สร้างลาน
     Should Contain    ${body}    เพิ่มช่องจอด
     Should Contain    ${body}    hx-post="/web/owner/register"
