@@ -8,11 +8,23 @@ pipeline {
     agent any
 
     parameters {
-        // How many pabot workers the parallel lane gets. One knob to turn down when the QA stack
-        // or the parking DB starts complaining — 1 makes the run fully sequential again without
-        // editing this file, which is the escape hatch worth having on the first parallel builds.
-        string(name: 'PARALLEL_PROCESSES', defaultValue: '4',
-               description: 'pabot workers for the parallel lane (1 = sequential)')
+        // How many pabot workers the parallel lane gets, and the escape hatch: 1 turns the run
+        // fully sequential without editing this file.
+        //
+        // 8 is measured, not guessed — and the measurement is the reason it is not 4:
+        //
+        //   #68  sequential   457 tests in 63.5s
+        //   #69  pabot x4     457 tests in 69.1s   SLOWER than sequential
+        //   #70  pabot x8     457 tests in 42.5s
+        //
+        // Each suite runs as its own process, so it pays robot startup plus the library imports
+        // (Requests, Database, Browser) every time. Across 44 suites that inflates 63.5s of real
+        // work to 265s at x4 and 328s at x8 — a fixed cost per suite that parallelism divides.
+        // Four workers do not divide it enough to win; eight do. Note the total work went UP from
+        // x4 to x8 (more contention on one app and one DB) while wall time still dropped, which
+        // says the ceiling is not here yet — worth re-measuring if the suite count grows.
+        string(name: 'PARALLEL_PROCESSES', defaultValue: '8',
+               description: 'pabot workers for the parallel lane (1 = sequential). 8 measured best.')
     }
 
     environment {
@@ -122,8 +134,9 @@ pipeline {
         // outputs into results/output.xml, so the publisher below, the pass count and the result
         // sync all see exactly what they saw when this was a single robot run.
         //
-        // PARALLEL_PROCESSES is a job parameter (default 4): one number to turn down if the QA
-        // stack or the DB starts complaining, without touching this file.
+        // PARALLEL_PROCESSES is a job parameter (default 8, measured — see the parameters block):
+        // one number to turn down if the QA stack or the DB starts complaining, without touching
+        // this file.
         stage('Run Robot (PLRS / parking_service)') {
             steps {
                 dir('qa-content') {
@@ -132,7 +145,10 @@ pipeline {
                     sh '''
                     VENV_DIR="/var/jenkins_home/olympus_venv"
                     . "$VENV_DIR/bin/activate"
-                    PROCS="${PARALLEL_PROCESSES:-4}"
+                    # The :-8 matters on its own: a build triggered before Jenkins has registered
+                    # the parameter (the first run after this block changes) passes nothing, and
+                    # the shell default is what decides the run. Keep it equal to defaultValue.
+                    PROCS="${PARALLEL_PROCESSES:-8}"
 
                     ROBOT_VARS="--variable BASE_API_URL:http://host.docker.internal:8003 \\
                       --variable MOCK_SERVER_URL:http://host.docker.internal:1083 \\
