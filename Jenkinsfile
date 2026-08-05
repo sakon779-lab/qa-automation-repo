@@ -7,6 +7,14 @@
 pipeline {
     agent any
 
+    parameters {
+        // How many pabot workers the parallel lane gets. One knob to turn down when the QA stack
+        // or the parking DB starts complaining — 1 makes the run fully sequential again without
+        // editing this file, which is the escape hatch worth having on the first parallel builds.
+        string(name: 'PARALLEL_PROCESSES', defaultValue: '4',
+               description: 'pabot workers for the parallel lane (1 = sequential)')
+    }
+
     environment {
         NEO4J_URI = 'bolt://host.docker.internal:7687'
         NEO4J_USER = 'neo4j'
@@ -97,6 +105,25 @@ pipeline {
             }
         }
 
+        // TWO LANES, ONE REPORT.
+        //
+        // Most suites are isolation-safe by construction: a six-digit <dynamic_id> per test, each
+        // suite seeding its own chain, surgical DELETE teardown (no TRUNCATE anywhere in the repo)
+        // and MockServer expectations scoped by a per-test X-Request-Id. Those run under pabot.
+        //
+        // Two are not, and no assertion can make them safe — the hazard is in the endpoint, not
+        // the test. POST /bookings/sweep-noshows (PLRS-21) marks every eligible row in the whole
+        // database, and PLRS-59 TC-005 has to arm the stub with request_id=ANY because the app
+        // mints the id itself, so it would answer any other suite's call to /charge. Both carry
+        // `Force Tags  serial` with the reason written where the hazard lives.
+        //
+        // Serial lane runs FIRST and alone — running it after would leave it racing whatever
+        // pabot still had in flight, which is the thing being avoided. rebot then merges the two
+        // outputs into results/output.xml, so the publisher below, the pass count and the result
+        // sync all see exactly what they saw when this was a single robot run.
+        //
+        // PARALLEL_PROCESSES is a job parameter (default 4): one number to turn down if the QA
+        // stack or the DB starts complaining, without touching this file.
         stage('Run Robot (PLRS / parking_service)') {
             steps {
                 dir('qa-content') {
@@ -105,16 +132,49 @@ pipeline {
                     sh '''
                     VENV_DIR="/var/jenkins_home/olympus_venv"
                     . "$VENV_DIR/bin/activate"
-                    robot --outputdir results \\
-                      --variable BASE_API_URL:http://host.docker.internal:8003 \\
+                    PROCS="${PARALLEL_PROCESSES:-4}"
+
+                    ROBOT_VARS="--variable BASE_API_URL:http://host.docker.internal:8003 \\
                       --variable MOCK_SERVER_URL:http://host.docker.internal:1083 \\
                       --variable MOCKSERVER_URL:http://host.docker.internal:1083 \\
                       --variable DB_HOST:host.docker.internal \\
                       --variable DB_PORT:5438 \\
                       --variable DB_NAME:parking \\
                       --variable DB_USER:parking \\
-                      --variable DB_PASS:parking \\
+                      --variable DB_PASS:parking"
+
+                    rm -rf results && mkdir -p results
+
+                    echo "── serial lane (suites tagged 'serial', nothing else running) ──"
+                    robot --outputdir results/serial --output output.xml \\
+                      --include serial $ROBOT_VARS \\
                       tests/parking_service/ || true
+
+                    echo "── parallel lane ($PROCS processes) ──"
+                    if command -v pabot >/dev/null 2>&1; then
+                        pabot --processes "$PROCS" \\
+                          --outputdir results/parallel --output output.xml \\
+                          --exclude serial $ROBOT_VARS \\
+                          tests/parking_service/ || true
+                    else
+                        # pabot missing is a reason to be slow, not a reason to report nothing.
+                        echo "⚠️  pabot not installed — running the parallel lane sequentially"
+                        robot --outputdir results/parallel --output output.xml \\
+                          --exclude serial $ROBOT_VARS \\
+                          tests/parking_service/ || true
+                    fi
+
+                    echo "── merging both lanes into results/output.xml ──"
+                    rebot --outputdir results --output output.xml \\
+                      --log log.html --report report.html \\
+                      results/serial/output.xml results/parallel/output.xml || true
+
+                    # A merge that silently produced nothing would look like a clean run with zero
+                    # tests, which the publisher would happily accept. Say so instead.
+                    if [ ! -f results/output.xml ]; then
+                        echo "❌ rebot produced no results/output.xml — the two lanes did not merge"
+                        exit 1
+                    fi
                     '''
                 }
             }

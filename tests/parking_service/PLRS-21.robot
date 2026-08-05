@@ -1,4 +1,17 @@
 *** Settings ***
+Documentation     PLRS-21 — no-show forfeiture.
+...
+...               SERIAL LANE. POST /bookings/sweep-noshows is a GLOBAL scan: it marks every
+...               eligible row in the database, including rows seeded by whatever else is
+...               running. Under pabot that means this suite would silently change another
+...               suite's data mid-test, and another suite's leftovers would change this one's
+...               counts. That is not fixable with a better assertion — it is a scoping
+...               property of the endpoint — so the suite runs alone until the endpoint
+...               accepts a scope filter.
+...
+...               It already happened once while running SEQUENTIALLY (Jenkins #35, `3 != 1`):
+...               a CONFIRMED row left behind by a killed run was enough.
+Force Tags        serial
 Library    RequestsLibrary
 Library    Collections
 Library    DatabaseLibrary

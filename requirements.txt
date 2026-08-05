@@ -1,5 +1,9 @@
 # --- Core Framework ---
 robotframework>=6.0.0
+# pabot runs the suites in parallel processes and rebot-merges the results, so the report and
+# the Jenkins publisher stay exactly as they were — one output.xml, one number. Suites tagged
+# `serial` are excluded from it and run in their own pass; see PLRS-21 and PLRS-59 for why.
+robotframework-pabot
 
 # --- API & HTTP ---
 robotframework-requests    # หัวใจสำคัญสำหรับยิง API
