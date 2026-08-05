@@ -6,6 +6,13 @@ Documentation     PLRS-59 — X-Request-Id correlation id. Generated from test_d
 ...               against what it was armed to answer — arming proves nothing about the header.
 ...               Every case uses its own unique id value, so no case can match another's traffic
 ...               and nothing here needs a global MockServer reset.
+...
+...               SERIAL LANE. One exception to the sentence above: TC-005 arms the stub with
+...               `request_id=ANY`, because there the APP mints the id and the test cannot know
+...               it in advance. `ANY` matches any traffic on /charge — including PLRS-13,
+...               PLRS-20, PLRS-47 and PLRS-87, which all call it. Under pabot this suite would
+...               answer their calls and count them as its own, so it runs alone.
+Force Tags        serial
 Library           RequestsLibrary
 Library           Collections
 Library           DatabaseLibrary

@@ -47,3 +47,5 @@ config/*.key
 
 # --- Mac OS ---
 .DS_Store
+# pabot writes this cache of suite names/timings next to the run — machine-local, not shared.
+.pabotsuitenames
