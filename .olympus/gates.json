@@ -1,0 +1,5 @@
+{"gates": [
+  {"name": "node_demo-e2e",
+   "run": "npx playwright test --config tests/node_demo/playwright.config.ts",
+   "if_exists": "tests/node_demo/playwright.config.ts"}
+]}

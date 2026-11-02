@@ -49,3 +49,8 @@ config/*.key
 .DS_Store
 # pabot writes this cache of suite names/timings next to the run — machine-local, not shared.
 .pabotsuitenames
+
+# --- Node (Playwright suites) ---
+node_modules/
+test-results/
+playwright-report/
