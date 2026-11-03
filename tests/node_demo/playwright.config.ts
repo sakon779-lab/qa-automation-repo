@@ -13,7 +13,9 @@ export default defineConfig<{ dbUrl: string; mockUrl: string }>({
   testDir: ".",
   testMatch: "**/*.spec.ts",
   fullyParallel: true,
-  reporter: [["list"]],
+  // list = what a person reads; json = what the KB ingests (Artemis syncs it into TestRun /
+  // TestCase.last_status after every run). results/ is gitignored.
+  reporter: [["list"], ["json", { outputFile: "../../results/playwright/node_demo.json" }]],
   use: {
     baseURL: process.env.ONODE_QA_URL ?? "http://localhost:8006",
     dbUrl: process.env.ONODE_QA_DB_URL ?? "postgresql://onode:onode@127.0.0.1:5442/onode",
