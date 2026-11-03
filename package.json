@@ -4,6 +4,8 @@
   "description": "Playwright suites for projects whose e2e stack is playwright (tests/<service>/playwright.config.ts). Robot suites are unaffected.",
   "devDependencies": {
     "@playwright/test": "^1.49.0",
-    "@types/node": "^22.10.0"
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1"
   }
 }
