@@ -4,20 +4,24 @@
 // polls main) applies it. No one — person or agent — needs Jenkins admin rights or a Jenkins
 // token to add a project's regression, and a fresh Jenkins rebuilds every job from here.
 //
-// One entry per project. `script` is the stack's Jenkinsfile (jenkins/<stack>.Jenkinsfile);
-// `service` is the folder under tests/ the suite lives in. `token` is the job's "Trigger builds
+// One entry per project. `script` is the stack's Jenkinsfile (Jenkinsfile = Robot,
+// jenkins/playwright.Jenkinsfile = Playwright); `params` are the job's build parameters, each
+// with the default a timer or a remote trigger runs with. `token` is the job's "Trigger builds
 // remotely" token — not a secret credential, it only queues that one job on this Jenkins
 // (Olympus's tools/trigger_jenkins uses it).
-//
-// Olympus-PLRS-Regression (Robot, ../Jenkinsfile) predates this file and is still configured by
-// hand; it moves here once ONODE has run from it for a while.
 
 def projects = [
+    [name       : 'Olympus-PLRS-Regression',
+     description: 'Run the PLRS suite (tests/parking_service) from the shared QA repo against plrs_qa ' +
+                  '(:8003, parking db) and push results into Apollo KB.',
+     script     : 'Jenkinsfile',
+     params     : [PARALLEL_PROCESSES: ['8', 'pabot workers for the parallel lane (1 = sequential). 8 measured best.']],
+     token      : 'plrs-trigger-7f3a'],
     [name       : 'Olympus-ONODE-Regression',
      description: 'ONODE Playwright suite (tests/node_demo) against onode_qa (:8006, Postgres :5442, ' +
                   'MockServer :1087); results pushed into the Apollo KB.',
      script     : 'jenkins/playwright.Jenkinsfile',
-     service    : 'node_demo',
+     params     : [SERVICE: ['node_demo', 'folder under tests/ with the suite\'s config']],
      token      : 'onode-trigger-4c1e'],
 ]
 
@@ -25,12 +29,12 @@ projects.each { p ->
     pipelineJob(p.name) {
         description(p.description + ' Defined in jenkins/jobs.groovy — change it there, not here.')
         parameters {
-            stringParam('SERVICE', p.service, 'folder under tests/ with the suite\'s config')
+            p.params.each { name, spec -> stringParam(name, spec[0], spec[1]) }
         }
         properties {
             pipelineTriggers {
                 triggers {
-                    cron { spec('H 5 * * *') }     // nightly, like the PLRS job
+                    cron { spec('H 5 * * *') }     // nightly
                 }
             }
         }
