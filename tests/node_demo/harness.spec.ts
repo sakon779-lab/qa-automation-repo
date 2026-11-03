@@ -16,14 +16,16 @@ test.describe("harness — db and mock fixtures", () => {
     await mock.arm("POST", "/harness-probe", 200, { ok: true });
     const client = await playwright.request.newContext({ baseURL: mockUrl });
     try {
-      const mine = await client.post("/harness-probe", { headers: { "X-Request-Id": requestId }, data: {} });
+      const mine = await client.post("/harness-probe", { headers: { "X-Request-Id": requestId }, data: { probe: 1 } });
       expect(mine.status()).toBe(200);
       expect(await mine.json()).toEqual({ ok: true });
 
       const other = await client.post("/harness-probe", { headers: { "X-Request-Id": "someone-else" }, data: {} });
       expect(other.status()).toBe(404);
 
-      expect(await mock.received("POST", "/harness-probe")).toHaveLength(1);
+      const got = await mock.received("POST", "/harness-probe");
+      expect(got).toHaveLength(1);
+      expect(got[0].body).toEqual({ probe: 1 });
 
       await mock.clear();
       const after = await client.post("/harness-probe", { headers: { "X-Request-Id": requestId }, data: {} });

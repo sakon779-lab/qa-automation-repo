@@ -13,6 +13,7 @@
  *   dynamicId  a unique integer for <dynamic_id> — safe under the fully-parallel run
  *   db         exec(sql) · rows(sql) · value(sql) on the project's QA database
  *   mock       arm(method, path, status, body) · received(method, path) · clear()
+ *              — received() returns the requests with `body` as the app sent it (parsed JSON)
  *              — stubs armed here are cleared when the test ends (never /mockserver/reset:
  *              a global wipe deletes what a parallel test just armed)
  *
@@ -67,6 +68,15 @@ pg.types.setTypeParser(20, (v: string) => {
   const n = Number(v);
   return Number.isSafeInteger(n) ? n : v;
 });
+
+function unwrapBody(body: unknown): unknown {
+  if (body && typeof body === "object") {
+    const b = body as Record<string, unknown>;
+    if ("json" in b) return typeof b.json === "string" ? JSON.parse(b.json) : b.json;
+    if ("string" in b) return b.string;
+  }
+  return body;
+}
 
 export const test = base.extend<Fixtures & Options>({
   dbUrl: ["", { option: true }],
@@ -138,7 +148,10 @@ export const test = base.extend<Fixtures & Options>({
           data: { method: method.toUpperCase(), path, headers: scope },
         });
         expect(res.status()).toBe(200);
-        return res.json();
+        // MockServer records a body as a typed wrapper ({ type: "JSON", json: {...}, rawBytes } or
+        // { type: "STRING", string: "..." }); hand the spec what the app actually SENT
+        const recorded = (await res.json()) as Array<Record<string, unknown>>;
+        return recorded.map((r) => ({ ...r, body: unwrapBody(r.body) }));
       },
       clear: async () => {
         await ms.put("/mockserver/clear", { data: { headers: scope } }).catch(() => undefined);
