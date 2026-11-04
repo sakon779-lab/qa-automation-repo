@@ -1,0 +1,19 @@
+appId: com.olympus.onode
+name: ONODE-14 TC-004 car 13 months shows the API detail error
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "ONODE Parking"
+    timeout: 20000
+- tapOn:
+    id: "vehicle-car"
+- tapOn:
+    id: "months-input"
+- inputText: "13"
+- tapOn:
+    id: "quote-button"
+- extendedWaitUntil:
+    visible: "months must be an integer from 1 to 12"
+    timeout: 10000
+- assertVisible: "months must be an integer from 1 to 12"

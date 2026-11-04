@@ -1,0 +1,32 @@
+appId: com.olympus.onode
+name: ONODE-14 TC-010 fresh error replaces previously shown price and discount
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "ONODE Parking"
+    timeout: 20000
+- tapOn:
+    id: "vehicle-car"
+- tapOn:
+    id: "months-input"
+- inputText: "3"
+- tapOn:
+    id: "quote-button"
+- extendedWaitUntil:
+    visible: "4500 THB"
+    timeout: 10000
+- assertVisible: "4500 THB"
+- assertVisible: "discount 0%"
+- tapOn:
+    id: "months-input"
+- eraseText
+- inputText: "13"
+- tapOn:
+    id: "quote-button"
+- extendedWaitUntil:
+    visible: "months must be an integer from 1 to 12"
+    timeout: 10000
+- assertVisible: "months must be an integer from 1 to 12"
+- assertNotVisible: "4500 THB"
+- assertNotVisible: "discount 0%"

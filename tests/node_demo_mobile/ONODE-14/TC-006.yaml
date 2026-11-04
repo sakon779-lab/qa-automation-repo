@@ -1,0 +1,17 @@
+appId: com.olympus.onode
+name: ONODE-14 TC-006 no vehicle selected shows vehicle is required
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "ONODE Parking"
+    timeout: 20000
+- tapOn:
+    id: "months-input"
+- inputText: "3"
+- tapOn:
+    id: "quote-button"
+- extendedWaitUntil:
+    visible: "vehicle is required"
+    timeout: 10000
+- assertVisible: "vehicle is required"
