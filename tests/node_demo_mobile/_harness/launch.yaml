@@ -1,10 +1,10 @@
 appId: com.olympus.onode
-name: harness — the ONODE app launches to its home screen
+name: harness — the ONODE app launches and shows its title
 ---
+# Waits on the app's title, not on a particular screen's testID: the first screen changes as cards
+# land (ONODE-14 made it the quote screen), the title stays.
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible:
-      id: "home-screen"
+    visible: "ONODE Parking"
     timeout: 20000
-- assertVisible: "ONODE Parking"
