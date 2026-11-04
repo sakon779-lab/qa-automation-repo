@@ -1,0 +1,10 @@
+appId: com.olympus.onode
+name: harness — the ONODE app launches to its home screen
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+- assertVisible: "ONODE Parking"
