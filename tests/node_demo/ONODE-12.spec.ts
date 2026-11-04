@@ -257,7 +257,7 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
     }
   });
 
-  test("TC-014 direct INSERT with txn_id '' is rejected by the passes.txn_id CHECK constraint", async ({ db, dynamicId }) => {
+  test("TC-014 direct INSERT with txn_id '' is rejected by the passes_txn_id_not_blank CHECK constraint", async ({ db, dynamicId }) => {
     const plate = `P${dynamicId}`.slice(0, 10);
     try {
       await expect(
@@ -265,7 +265,7 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
           `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) ` +
             `VALUES ('car', 1, '${plate}', 1500, '', 'ACTIVE')`,
         ),
-      ).rejects.toThrow(/txn_id/);
+      ).rejects.toThrow(/passes_txn_id_not_blank/);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
