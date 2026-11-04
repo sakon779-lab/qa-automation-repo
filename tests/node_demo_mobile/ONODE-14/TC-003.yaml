@@ -1,0 +1,20 @@
+appId: com.olympus.onode
+name: ONODE-14 TC-003 motorcycle 12 months shows 5760 THB and discount 20%
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "ONODE Parking"
+    timeout: 20000
+- tapOn:
+    id: "vehicle-motorcycle"
+- tapOn:
+    id: "months-input"
+- inputText: "12"
+- tapOn:
+    id: "quote-button"
+- extendedWaitUntil:
+    visible: "5760 THB"
+    timeout: 10000
+- assertVisible: "5760 THB"
+- assertVisible: "discount 20%"

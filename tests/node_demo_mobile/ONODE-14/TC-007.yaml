@@ -1,0 +1,19 @@
+appId: com.olympus.onode
+name: ONODE-14 TC-007 quote screen is the first page with all required testIDs
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "ONODE Parking"
+    timeout: 20000
+- assertVisible: "ONODE Parking"
+- assertVisible:
+    id: "quote-screen"
+- assertVisible:
+    id: "vehicle-car"
+- assertVisible:
+    id: "vehicle-motorcycle"
+- assertVisible:
+    id: "months-input"
+- assertVisible:
+    id: "quote-button"

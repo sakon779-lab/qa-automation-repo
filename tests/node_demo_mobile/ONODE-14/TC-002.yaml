@@ -1,0 +1,20 @@
+appId: com.olympus.onode
+name: ONODE-14 TC-002 car 6 months shows 8100 THB and discount 10%
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "ONODE Parking"
+    timeout: 20000
+- tapOn:
+    id: "vehicle-car"
+- tapOn:
+    id: "months-input"
+- inputText: "6"
+- tapOn:
+    id: "quote-button"
+- extendedWaitUntil:
+    visible: "8100 THB"
+    timeout: 10000
+- assertVisible: "8100 THB"
+- assertVisible: "discount 10%"
