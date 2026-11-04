@@ -1,5 +1,9 @@
 {"gates": [
   {"name": "node_demo-e2e",
    "run": "npx playwright test --config tests/node_demo/playwright.config.ts",
-   "if_exists": "tests/node_demo/playwright.config.ts"}
+   "if_exists": "tests/node_demo/playwright.config.ts"},
+  {"name": "node_demo_mobile-e2e",
+   "run": "node -e \"require('fs').mkdirSync('results/maestro',{recursive:true})\" && maestro test tests/node_demo_mobile --format junit --output results/maestro/node_demo_mobile.xml",
+   "if_exists": "tests/node_demo_mobile/config.yaml",
+   "when_changed": "tests/node_demo_mobile/"}
 ]}

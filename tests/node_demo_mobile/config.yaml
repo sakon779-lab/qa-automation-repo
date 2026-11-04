@@ -1,0 +1,9 @@
+# Maestro workspace for the ONODE mobile app (olympus-node-demo/mobile).
+#
+# appId: com.olympus.onode   <- every flow starts with this line (Maestro reads appId per flow)
+#
+# One folder per card, one flow per CSV row: <CARD>/<CaseID>.yaml. Hermes builds the app against
+# the QA stack and installs it on the emulator before Artemis runs; the gate in .olympus/gates.json
+# runs this folder and writes JUnit to results/maestro/node_demo_mobile.xml.
+flows:
+  - "*/*"
