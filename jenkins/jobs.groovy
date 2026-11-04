@@ -16,7 +16,11 @@ def projects = [
                   '(:8003, parking db) and push results into Apollo KB.',
      script     : 'Jenkinsfile',
      params     : [PARALLEL_PROCESSES: ['8', 'pabot workers for the parallel lane (1 = sequential). 8 measured best.']],
-     token      : 'plrs-trigger-7f3a'],
+     token      : 'plrs-trigger-7f3a',
+     // PLRS is no longer developed and its QA stack (plrs_qa :8003) is shut down to save the
+     // machine (4 Nov 2026): every nightly run would fail on connection errors. Disabled, not
+     // deleted — the build history stays and `false` brings it back.
+     disabled   : true],
     [name       : 'Olympus-ONODE-Regression',
      description: 'ONODE Playwright suite (tests/node_demo) against onode_qa (:8006, Postgres :5442, ' +
                   'MockServer :1087); results pushed into the Apollo KB.',
@@ -39,6 +43,7 @@ projects.each { p ->
             }
         }
         authenticationToken(p.token)
+        disabled(p.disabled ?: false)
         definition {
             cpsScm {
                 scm {
