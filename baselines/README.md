@@ -1,0 +1,1 @@
+Visual baselines — the pictures a person approved. Olympus compares every run's screenshots (results/*/shots, gitignored) with these; a new picture is proposed by Artemis in his PR and approved by merging it; a changed picture is accepted with `python -m tools.visual_approve <repo> --replace <name>` after looking at the .diff.png.
