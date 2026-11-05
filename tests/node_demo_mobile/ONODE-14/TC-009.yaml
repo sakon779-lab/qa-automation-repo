@@ -18,3 +18,4 @@ name: ONODE-14 TC-009 months sent as integer car 3 months shows 4500 THB
     timeout: 10000
 - assertVisible: "4500 THB"
 - assertVisible: "discount 0%"
+- takeScreenshot: ONODE-14-TC-009

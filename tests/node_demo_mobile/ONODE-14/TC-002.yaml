@@ -18,3 +18,4 @@ name: ONODE-14 TC-002 car 6 months shows 8100 THB and discount 10%
     timeout: 10000
 - assertVisible: "8100 THB"
 - assertVisible: "discount 10%"
+- takeScreenshot: ONODE-14-TC-002

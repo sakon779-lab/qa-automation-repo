@@ -18,3 +18,4 @@ name: ONODE-14 TC-003 motorcycle 12 months shows 5760 THB and discount 20%
     timeout: 10000
 - assertVisible: "5760 THB"
 - assertVisible: "discount 20%"
+- takeScreenshot: ONODE-14-TC-003
