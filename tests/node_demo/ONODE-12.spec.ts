@@ -19,10 +19,6 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * matches a forwarded `req-<requestId>` and the app would see no stub (502). The row's intent — the
  * app forwards the incoming X-Request-Id unchanged — is proven by sending the fixture's `requestId`
  * as the header and asserting the gateway recorded exactly that value.
- *
- * FINDING (CSV, TC-014): the CSV's direct INSERT lists a `currency` column; the `passes` table has
- * no such column, so the insert fails on the wrong error. The INSERT here lists only real columns so
- * the rejection is the txn_id CHECK constraint the row is about.
  */
 
 const CHARGE = "/charge";
