@@ -14,3 +14,4 @@ name: ONODE-14 TC-005 car with blank months shows months is required
     visible: "months is required"
     timeout: 10000
 - assertVisible: "months is required"
+- takeScreenshot: results/maestro/shots/ONODE-14-TC-005
