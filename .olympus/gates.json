@@ -7,7 +7,7 @@
     },
     {
       "name": "node_demo_mobile-e2e",
-      "run": "node -e \"require('fs').mkdirSync('results/maestro/shots',{recursive:true})\" && maestro test tests/node_demo_mobile --format junit --output results/maestro/node_demo_mobile.xml",
+      "run": "maestro test --test-output-dir results/maestro/shots tests/node_demo_mobile --format junit --output results/maestro/node_demo_mobile.xml",
       "if_exists": "tests/node_demo_mobile/config.yaml",
       "when_changed": "tests/node_demo_mobile/",
       "timeout_s": 1200
