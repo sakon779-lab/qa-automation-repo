@@ -34,6 +34,8 @@ report.html
 output.xml
 *.png
 *.jpg
+# visual-regression baselines a person approved ARE committed (Olympus core/visual.py)
+!baselines/**
 
 # --- IDE Settings ---
 .vscode/
