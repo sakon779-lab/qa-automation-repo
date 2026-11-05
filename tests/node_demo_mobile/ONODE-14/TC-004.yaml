@@ -19,4 +19,4 @@ name: ONODE-14 TC-004 car 13 months shows the API detail error
 - assertVisible: "months must be an integer from 1 to 12"
 - assertNotVisible: "4500 THB"
 - assertNotVisible: "discount 0%"
-- takeScreenshot: results/maestro/shots/ONODE-14-TC-004
+- takeScreenshot: ONODE-14-TC-004

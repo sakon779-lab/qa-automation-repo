@@ -30,4 +30,4 @@ name: ONODE-14 TC-010 fresh error replaces previously shown price and discount
 - assertVisible: "months must be an integer from 1 to 12"
 - assertNotVisible: "4500 THB"
 - assertNotVisible: "discount 0%"
-- takeScreenshot: results/maestro/shots/ONODE-14-TC-010
+- takeScreenshot: ONODE-14-TC-010

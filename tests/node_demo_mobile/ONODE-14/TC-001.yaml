@@ -18,4 +18,4 @@ name: ONODE-14 TC-001 car 3 months shows 4500 THB and discount 0%
     timeout: 10000
 - assertVisible: "4500 THB"
 - assertVisible: "discount 0%"
-- takeScreenshot: results/maestro/shots/ONODE-14-TC-001
+- takeScreenshot: ONODE-14-TC-001

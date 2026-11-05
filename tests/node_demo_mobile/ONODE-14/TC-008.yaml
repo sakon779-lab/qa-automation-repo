@@ -18,4 +18,4 @@ name: ONODE-14 TC-008 tapping quote POSTs and renders returned price and discoun
     timeout: 10000
 - assertVisible: "8100 THB"
 - assertVisible: "discount 10%"
-- takeScreenshot: results/maestro/shots/ONODE-14-TC-008
+- takeScreenshot: ONODE-14-TC-008

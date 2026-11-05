@@ -15,4 +15,4 @@ name: ONODE-14 TC-006 no vehicle selected shows vehicle is required
     visible: "vehicle is required"
     timeout: 10000
 - assertVisible: "vehicle is required"
-- takeScreenshot: results/maestro/shots/ONODE-14-TC-006
+- takeScreenshot: ONODE-14-TC-006

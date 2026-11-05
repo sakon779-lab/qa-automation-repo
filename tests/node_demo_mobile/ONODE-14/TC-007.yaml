@@ -17,4 +17,4 @@ name: ONODE-14 TC-007 quote screen is the first page with all required testIDs
     id: "months-input"
 - assertVisible:
     id: "quote-button"
-- takeScreenshot: results/maestro/shots/ONODE-14-TC-007
+- takeScreenshot: ONODE-14-TC-007
