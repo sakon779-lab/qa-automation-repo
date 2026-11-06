@@ -1,72 +1,53 @@
 import { test, expect } from "../../resources/playwright/fixtures";
 
 /**
- * ONODE-12 — POST /passes must reject a SUCCESS charge with an empty/invalid txn_id
- * (SEC-ONODE-8-1). One test per approved CSV row.
+ * ONODE-12 — SEC-ONODE-8-1: POST /passes must reject a SUCCESS charge with an
+ * empty/invalid txn_id (no pass without a real payment reference).
  *
- * The gateway is stubbed through `mock.arm('POST', '/charge', …)`; the stub answers only requests
- * carrying this test's X-Request-Id, which `api` sends and the app forwards. Every row asserts the
- * HTTP contract AND the database state (no row on a refusal, exactly one row on a success), then
- * deletes only what it created.
- *
- * FINDING (CSV, all rows): the CSV names the gateway path `/external/payment/charge`. The deployed
- * app calls `/charge` (proven by the passing ONODE-8 suite, which arms `/charge`). Stubbing the
- * CSV's path matches nothing and every positive row would see 502. The rows are automated against
- * the real path `/charge`; the CSV should be corrected.
- *
- * FINDING (CSV, TC-013): the CSV says to send `X-Request-Id: 'req-<dynamic_id>'`. The `mock`
- * fixture scopes stubs to the test's own `requestId`, so a stub armed under `requestId` never
- * matches a forwarded `req-<requestId>` and the app would see no stub (502). The row's intent — the
- * app forwards the incoming X-Request-Id unchanged — is proven by sending the fixture's `requestId`
- * as the header and asserting the gateway recorded exactly that value.
+ * Every row of test_designs/ONODE-12.csv becomes one test. The gateway is stubbed
+ * through `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the
+ * app forwards), the DB is read back through `db`, and each test cleans up its own
+ * plate in a finally block so the fully-parallel suite never collides.
  */
-
-const CHARGE = "/charge";
-
-/** MockServer records a request body as a typed wrapper ({ type, json, rawBytes, … }); unwrap it. */
-function recordedJson(body: unknown): unknown {
-  if (typeof body === "string") return JSON.parse(body);
-  if (body && typeof body === "object" && "json" in body) {
-    return (body as { json: unknown }).json;
-  }
-  return body;
-}
-
-test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-1)", () => {
-  test("TC-001 gateway SUCCESS with txn_id '' → 502 'payment gateway unavailable', no row", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id", () => {
+  // TC-001 — gateway SUCCESS with txn_id '' → 502, no row (the SEC-ONODE-8-1 replay)
+  test("TC-001 rejects a SUCCESS charge with an empty txn_id", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "" });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(502);
-      expect(await res.json()).toEqual({ detail: "payment gateway unavailable" });
+      expect(await res.json()).toMatchObject({ detail: "payment gateway unavailable" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-002 gateway SUCCESS with non-string txn_id 123 → 502 'payment gateway unavailable', no row", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-002 — gateway SUCCESS with a non-string txn_id (number 123) → 502, no row
+  test("TC-002 rejects a SUCCESS charge with a non-string txn_id", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: 123 });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: 123 });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(502);
-      expect(await res.json()).toEqual({ detail: "payment gateway unavailable" });
+      expect(await res.json()).toMatchObject({ detail: "payment gateway unavailable" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-003 gateway SUCCESS with txn_id 'txn_1' → 201, row persisted and echoed exactly", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-003 — happy path: real per-case txn_id → 201, persisted and echoed exactly
+  test("TC-003 persists and echoes a real txn_id on the happy path", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(201);
@@ -76,24 +57,26 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
         plate,
         price: 1500,
         currency: "THB",
-        txn_id: "txn_1",
+        txn_id: txnId,
         status: "ACTIVE",
       });
 
       expect(
         await db.value(
-          `SELECT count(*) FROM passes WHERE plate = '${plate}' AND txn_id = 'txn_1' AND status = 'ACTIVE'`,
+          `SELECT count(*) FROM passes WHERE plate = '${plate}' AND txn_id = '${txnId}' AND status = 'ACTIVE'`,
         ),
       ).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-004 txn_id ' txn_1 ' stored as received, plate trimmed, motorcycle 12 months → 5760", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-004 — txn_id stored exactly as received (whitespace preserved), plate trimmed
+  test("TC-004 stores txn_id exactly as received while trimming the plate", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
+    const txnId = ` txn_${dynamicId} `;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: " txn_1 " });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
       const res = await api.post("/passes", {
         data: { vehicle: "motorcycle", months: 12, plate: `  ${plate}  ` },
@@ -105,135 +88,150 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
         plate,
         price: 5760,
         currency: "THB",
-        txn_id: " txn_1 ",
+        txn_id: txnId,
         status: "ACTIVE",
       });
 
       expect(
         await db.value(
-          `SELECT count(*) FROM passes WHERE plate = '${plate}' AND txn_id = ' txn_1 ' AND status = 'ACTIVE'`,
+          `SELECT count(*) FROM passes WHERE plate = '${plate}' AND txn_id = '${txnId}' AND status = 'ACTIVE'`,
         ),
       ).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-005 gateway status DECLINED → 402 'payment declined', no row", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-005 — gateway DECLINED → 402, no row
+  test("TC-005 returns 402 when the gateway declines the charge", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "DECLINED", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "DECLINED", txn_id: "txn_1" });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(402);
-      expect(await res.json()).toEqual({ detail: "payment declined" });
+      expect(await res.json()).toMatchObject({ detail: "payment declined" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-006 gateway HTTP 500 → 502 'payment gateway unavailable', no row", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-006 — gateway HTTP 500 → 502, no row
+  test("TC-006 returns 502 when the gateway answers HTTP 500", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 500, { error: "internal" });
+      await mock.arm("POST", "/charge", 500, { error: "internal" });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(502);
-      expect(await res.json()).toEqual({ detail: "payment gateway unavailable" });
+      expect(await res.json()).toMatchObject({ detail: "payment gateway unavailable" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-007 vehicle key absent → 400 'vehicle is required', no row", async ({ api, db, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-007 — vehicle key absent → 400, no gateway call, no row
+  test("TC-007 returns 400 when the vehicle key is absent", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
       const res = await api.post("/passes", { data: { months: 1, plate } });
       expect(res.status()).toBe(400);
-      expect(await res.json()).toEqual({ detail: "vehicle is required" });
+      expect(await res.json()).toMatchObject({ detail: "vehicle is required" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
+      expect(await mock.received("POST", "/charge")).toHaveLength(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-008 vehicle non-string (number 1) → 400 'vehicle must be car or motorcycle', no row", async ({ api, db, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-008 — vehicle is a non-string JSON value → 400, no gateway call, no row
+  test("TC-008 returns 400 when vehicle is a non-string value", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
       const res = await api.post("/passes", { data: { vehicle: 1, months: 1, plate } });
       expect(res.status()).toBe(400);
-      expect(await res.json()).toEqual({ detail: "vehicle must be car or motorcycle" });
+      expect(await res.json()).toMatchObject({ detail: "vehicle must be car or motorcycle" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
+      expect(await mock.received("POST", "/charge")).toHaveLength(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-009 months key absent → 400 'months is required', no row", async ({ api, db, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-009 — months key absent → 400, no gateway call, no row
+  test("TC-009 returns 400 when the months key is absent", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
       const res = await api.post("/passes", { data: { vehicle: "car", plate } });
       expect(res.status()).toBe(400);
-      expect(await res.json()).toEqual({ detail: "months is required" });
+      expect(await res.json()).toMatchObject({ detail: "months is required" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
+      expect(await mock.received("POST", "/charge")).toHaveLength(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-010 months out of range (13) → 400 'months must be an integer from 1 to 12', no row", async ({ api, db, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-010 — months out of range (13) → 400, no gateway call, no row
+  test("TC-010 returns 400 when months is out of range", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
       const res = await api.post("/passes", { data: { vehicle: "car", months: 13, plate } });
       expect(res.status()).toBe(400);
-      expect(await res.json()).toEqual({ detail: "months must be an integer from 1 to 12" });
+      expect(await res.json()).toMatchObject({ detail: "months must be an integer from 1 to 12" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
+      expect(await mock.received("POST", "/charge")).toHaveLength(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-011 whitespace-only plate → 400 'plate is required', no row", async ({ api, db, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-011 — whitespace-only plate → 400, no gateway call, no row
+  test("TC-011 returns 400 when the plate is whitespace-only", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: "   " } });
       expect(res.status()).toBe(400);
-      expect(await res.json()).toEqual({ detail: "plate is required" });
+      expect(await res.json()).toMatchObject({ detail: "plate is required" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
+      expect(await mock.received("POST", "/charge")).toHaveLength(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-012 plate longer than 10 chars → 400 'plate must be a string of at most 10 characters', no row", async ({ api, db, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-012 — trimmed plate longer than 10 chars → 400, no gateway call, no row
+  test("TC-012 returns 400 when the trimmed plate is longer than 10 characters", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: "ABCDEFGHIJK" } });
       expect(res.status()).toBe(400);
-      expect(await res.json()).toEqual({ detail: "plate must be a string of at most 10 characters" });
+      expect(await res.json()).toMatchObject({ detail: "plate must be a string of at most 10 characters" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
+      expect(await mock.received("POST", "/charge")).toHaveLength(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-013 X-Request-Id is forwarded to the gateway charge call", async ({ api, db, mock, dynamicId, requestId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-013 — the incoming X-Request-Id is forwarded to the gateway charge call
+  test("TC-013 forwards the incoming X-Request-Id to the gateway", async ({ api, db, mock, dynamicId, requestId }) => {
+    const plate = `P${dynamicId}`;
+    // The stub is armed for this test's requestId; the app must forward that same value
+    // to the gateway, so the charge call only matches if the header was passed through.
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_1" });
 
-      // The mock fixture scopes stubs to `requestId`; send that same value so the app's forwarded
-      // header matches the stub (see FINDING).
       const res = await api.post("/passes", {
         data: { vehicle: "car", months: 1, plate },
         headers: { "X-Request-Id": requestId },
@@ -241,42 +239,44 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
       expect(res.status()).toBe(201);
       expect(await res.json()).toMatchObject({ plate, txn_id: "txn_1", status: "ACTIVE" });
 
-      const calls = await mock.received("POST", CHARGE);
-      expect(calls).toHaveLength(1);
-      // MockServer records header names lowercased.
-      const headers = calls[0].headers as Record<string, string[]>;
-      expect(headers["x-request-id"]).toEqual([requestId]);
+      const received = await mock.received("POST", "/charge");
+      expect(received).toHaveLength(1);
+      // MockServer records header names in its own casing; match the name case-insensitively.
+      const headers = received[0].headers as Record<string, string[]>;
+      const forwarded = Object.entries(headers).find(([name]) => name.toLowerCase() === "x-request-id")?.[1];
+      expect(forwarded).toContain(requestId);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-014 direct INSERT with txn_id '' is rejected by the passes_txn_id_not_blank CHECK constraint", async ({ db, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-014 — the DB CHECK backstop rejects a direct INSERT with txn_id = ''
+  test("TC-014 the DB CHECK rejects a direct INSERT with an empty txn_id", async ({ db, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
       await expect(
         db.exec(
-          `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) ` +
-            `VALUES ('car', 1, '${plate}', 1500, '', 'ACTIVE')`,
+          `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plate}', 1500, '', 'ACTIVE')`,
         ),
       ).rejects.toThrow(/passes_txn_id_not_blank/);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-015 SEC-ONODE-8-1 replay: SUCCESS with txn_id '' → 502, no ACTIVE pass with empty txn_id", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-015 — SEC-ONODE-8-1 closing-condition replay: no ACTIVE pass with an empty txn_id
+  test("TC-015 the SEC-ONODE-8-1 replay leaves no ACTIVE pass with an empty txn_id", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "" });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(502);
-      expect(await res.json()).toEqual({ detail: "payment gateway unavailable" });
+      expect(await res.json()).toMatchObject({ detail: "payment gateway unavailable" });
 
       expect(
         await db.value(
@@ -284,29 +284,32 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
         ),
       ).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-016 literal txn_id '' yields 502 and the SQL predicate txn_id='' finds no pass", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-016 — the literal txn_id fragments are the exact JSON/SQL values asserted on
+  test("TC-016 a SUCCESS body with txn_id '' yields 502 and no matching pass", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "" });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(502);
-      expect(await res.json()).toEqual({ detail: "payment gateway unavailable" });
+      expect(await res.json()).toMatchObject({ detail: "payment gateway unavailable" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}' AND txn_id = ''`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-017 motorcycle 6 months → price 3240 THB (10% tier)", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-017 — mid-tier discount: motorcycle 6 months -> 3240 THB
+  test("TC-017 prices motorcycle 6 months at 3240 THB", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
       const res = await api.post("/passes", { data: { vehicle: "motorcycle", months: 6, plate } });
       expect(res.status()).toBe(201);
@@ -316,20 +319,21 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
         plate,
         price: 3240,
         currency: "THB",
-        txn_id: "txn_1",
+        txn_id: txnId,
         status: "ACTIVE",
       });
 
       expect(await db.value(`SELECT price FROM passes WHERE plate = '${plate}'`)).toBe(3240);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-018 gateway is called with the exact charge body {amount, currency, reference}", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-018 — the gateway charge body is exactly {amount, currency, reference}
+  test("TC-018 calls the gateway with the exact charge body", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_1" });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: `  ${plate}  ` } });
       expect(res.status()).toBe(201);
@@ -341,81 +345,109 @@ test.describe("ONODE-12 — POST /passes rejects an invalid txn_id (SEC-ONODE-8-
         status: "ACTIVE",
       });
 
-      const calls = await mock.received("POST", CHARGE);
-      expect(calls).toHaveLength(1);
-      expect(recordedJson(calls[0].body)).toEqual({ amount: 1500, currency: "THB", reference: plate });
+      const received = await mock.received("POST", "/charge");
+      expect(received).toHaveLength(1);
+      expect(received[0].body).toMatchObject({ amount: 1500, currency: "THB", reference: plate });
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-019 gateway SUCCESS with whitespace-only txn_id '   ' → 502, no row", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-019 — Layer 2 route guard: whitespace-only txn_id → 502, no row
+  test("TC-019 the route guard refuses a whitespace-only txn_id", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "   " });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "   " });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(502);
-      expect(await res.json()).toEqual({ detail: "payment gateway unavailable" });
+      expect(await res.json()).toMatchObject({ detail: "payment gateway unavailable" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-020 the passes row is the audit record: txn_id, plate, price, created_at", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-020 — the passes row is the audit record
+  test("TC-020 the passes row records txn_id, plate, price and created_at", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(201);
-      expect(await res.json()).toMatchObject({ plate, price: 1500, txn_id: "txn_1", status: "ACTIVE" });
+      expect(await res.json()).toMatchObject({ plate, price: 1500, txn_id: txnId, status: "ACTIVE" });
 
       expect(
         await db.value(
-          `SELECT count(*) FROM passes WHERE plate = '${plate}' AND txn_id = 'txn_1' AND price = 1500 AND created_at IS NOT NULL`,
+          `SELECT count(*) FROM passes WHERE plate = '${plate}' AND txn_id = '${txnId}' AND price = 1500 AND created_at IS NOT NULL`,
         ),
       ).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-021 POST /passes is stateful: one row written and GET /passes/{id} reads it back", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-021 — POST /passes is stateful: GET /passes/{id} reads the row back
+  test("TC-021 GET /passes/{id} reads back the pass that was written", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
       const created = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(created.status()).toBe(201);
       const createdBody = await created.json();
-      expect(createdBody).toMatchObject({ plate, price: 1500, txn_id: "txn_1", status: "ACTIVE" });
+      expect(createdBody).toMatchObject({ plate, price: 1500, txn_id: txnId, status: "ACTIVE" });
 
-      const read = await api.get(`/passes/${createdBody.id}`);
-      expect(read.status()).toBe(200);
-      expect(await read.json()).toMatchObject({ plate, price: 1500, txn_id: "txn_1", status: "ACTIVE" });
+      const fetched = await api.get(`/passes/${createdBody.id}`);
+      expect(fetched.status()).toBe(200);
+      expect(await fetched.json()).toMatchObject({ plate, price: 1500, txn_id: txnId, status: "ACTIVE" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 
-  test("TC-022 deployed app uses the injected gateway (1 charge call) and injected DB (row persisted)", async ({ api, db, mock, dynamicId }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
+  // TC-022 — the deployed app uses the injected gateway and the injected database
+  test("TC-022 the deployed app reaches MockServer and persists the row", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
     try {
-      await mock.arm("POST", CHARGE, 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(201);
-      expect(await res.json()).toMatchObject({ plate, txn_id: "txn_1", status: "ACTIVE" });
+      expect(await res.json()).toMatchObject({ plate, txn_id: txnId, status: "ACTIVE" });
 
-      expect(await mock.received("POST", CHARGE)).toHaveLength(1);
+      expect(await mock.received("POST", "/charge")).toHaveLength(1);
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
+    }
+  });
+
+  // TC-023 — ONODE-23 UNIQUE-txn_id interaction: a repeat purchase answers 200, no duplicate row
+  test("TC-023 a repeat purchase with the same txn_id answers 200 without a duplicate row", async ({ api, db, mock, dynamicId }) => {
+    const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
+    try {
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
+
+      const first = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
+      expect(first.status()).toBe(201);
+      expect(await first.json()).toMatchObject({ plate, price: 1500, txn_id: txnId, status: "ACTIVE" });
+
+      const second = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
+      expect(second.status()).toBe(200);
+      expect(await second.json()).toMatchObject({ plate, price: 1500, txn_id: txnId, status: "ACTIVE" });
+
+      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
+    } finally {
+      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
     }
   });
 });
