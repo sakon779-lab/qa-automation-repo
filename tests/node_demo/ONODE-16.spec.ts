@@ -453,18 +453,19 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   test("TC-016 reconciliation orders the suspicious list by pass_id ascending", async ({ api, db, dynamicId }) => {
     const plateP = `P${dynamicId}`.slice(0, 10);
     const plateQ = `Q${dynamicId}`.slice(0, 10);
-    const txnId = `txn-${dynamicId}`;
+    const txnIdA = `txn-${dynamicId}-a`;
+    const txnIdB = `txn-${dynamicId}-b`;
     const idLow = dynamicId;
     const idHigh = dynamicId + 1;
     try {
       // Seed the HIGHER id first so insertion order is reverse of the expected output order.
-      // Both passes have a non-blank txn_id and no SUCCESS attempt → both are suspicious with
-      // reason 'no successful payment attempt', exercising the same ORDER BY pass_id ASC.
+      // Both passes have a DISTINCT non-blank txn_id and no SUCCESS attempt → both are suspicious
+      // with reason 'no successful payment attempt', exercising the same ORDER BY pass_id ASC.
       await db.exec(
-        `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) VALUES (${idHigh}, 'car', 1, '${plateQ}', 1500, '${txnId}', 'ACTIVE')`,
+        `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) VALUES (${idHigh}, 'car', 1, '${plateQ}', 1500, '${txnIdB}', 'ACTIVE')`,
       );
       await db.exec(
-        `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) VALUES (${idLow}, 'car', 1, '${plateP}', 1500, '${txnId}', 'ACTIVE')`,
+        `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) VALUES (${idLow}, 'car', 1, '${plateP}', 1500, '${txnIdA}', 'ACTIVE')`,
       );
 
       const res = await api.get("/passes/reconciliation");
@@ -475,8 +476,18 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
         (s) => s.plate === plateP || s.plate === plateQ,
       );
       expect(suspicious).toHaveLength(2);
-      expect(suspicious[0]).toMatchObject({ pass_id: idLow, plate: plateP, reason: "no successful payment attempt" });
-      expect(suspicious[1]).toMatchObject({ pass_id: idHigh, plate: plateQ, reason: "no successful payment attempt" });
+      expect(suspicious[0]).toMatchObject({
+        pass_id: idLow,
+        plate: plateP,
+        txn_id: txnIdA,
+        reason: "no successful payment attempt",
+      });
+      expect(suspicious[1]).toMatchObject({
+        pass_id: idHigh,
+        plate: plateQ,
+        txn_id: txnIdB,
+        reason: "no successful payment attempt",
+      });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id IN (${idLow}, ${idHigh})`)).toBe(2);
     } finally {
