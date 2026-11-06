@@ -52,8 +52,10 @@ pipeline {
         stage('Install Playwright') {
             steps {
                 dir('qa-content') {
-                    // API suites launch no browser, so no `playwright install` — only the npm deps
+                    // UI suites drive a real browser since ONODE-24 (6 Nov 2026): install Chromium
+                    // after the npm deps. Idempotent; the image already carries its runtime libs.
                     sh 'npm ci --no-audit --no-fund'
+                    sh 'npx playwright install chromium'
                 }
             }
         }
