@@ -18,6 +18,15 @@ export default defineConfig<{ dbUrl: string; mockUrl: string }>({
   testDir: ".",
   testMatch: "**/*.spec.ts",
   fullyParallel: true,
+  // One retry, in a fresh worker. Since the first browser-driven specs (ONODE-24/26, 6 Nov 2026) a
+  // worker that has run a page test dies a few seconds later with "worker process exited
+  // unexpectedly (code=3221226505)" — a native fast-fail (0xC0000409) on this Windows runner
+  // (Node 24.15 + Playwright 1.64.1), landing on whichever API test that worker picked up next.
+  // Measured: the API-only suite never crashes (140/140 ×1), the mixed suite crashes about every
+  // other run at 8 workers, never at --workers=1, never with the browser spec alone. The retry
+  // re-runs only the test the crash killed; a retried pass is reported as flaky and the KB keeps
+  // that visible (tools/sync_test_results). A real assertion failure still fails twice.
+  retries: 1,
   // list = what a person reads in the console · junit = Jenkins's test-results page (per-test
   // history, trend, re-run with one click) · json = what the KB ingests (TestRun /
   // TestCase.last_status — Artemis after every run, Jenkins after every build). results/ is
