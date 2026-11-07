@@ -8,6 +8,10 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * through `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the
  * app forwards), the DB is read back through `db`, and each test cleans up its own
  * plate in a finally block so the fully-parallel suite never collides.
+ *
+ * AMENDED by ONODE-29 B4 (TC-018): a reused txn_id whose stored pass differs on any of the
+ * four bound fields (vehicle, months, plate, price) now answers 409 'txn_id already used for a
+ * different purchase' instead of 200 with the first pass's body.
  */
 test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id", () => {
   // TC-001 — gateway SUCCESS with txn_id '' → 502, no row (the SEC-ONODE-8-1 replay)
@@ -329,27 +333,42 @@ test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id
     }
   });
 
-  // TC-018 — the gateway charge body is exactly {amount, currency, reference}
-  test("TC-018 calls the gateway with the exact charge body", async ({ api, db, mock, dynamicId }) => {
+  // TC-018 — ONODE-29 four-field binding on the idempotent path: a reused txn_id with a
+  // DIFFERENT plate answers 409 'txn_id already used for a different purchase' and discloses
+  // nothing (no new passes row). AMENDED by ONODE-29 B4 — pre-fix returned 200 with the first
+  // pass's body.
+  test("TC-018 a reused txn_id with a different plate answers 409 and writes no new row", async ({
+    api,
+    db,
+    mock,
+    dynamicId,
+  }) => {
     const plate = `P${dynamicId}`;
+    const otherPlate = `Q${dynamicId}`;
+    const txnId = `txn-${dynamicId}`;
     try {
-      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
-      const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: `  ${plate}  ` } });
-      expect(res.status()).toBe(201);
-      expect(await res.json()).toMatchObject({
+      const first = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: `  ${plate}  ` } });
+      expect(first.status()).toBe(201);
+      expect(await first.json()).toMatchObject({
         plate,
         price: 1500,
         currency: "THB",
-        txn_id: "txn_1",
+        txn_id: txnId,
         status: "ACTIVE",
       });
 
-      const received = await mock.received("POST", "/charge");
-      expect(received).toHaveLength(1);
-      expect(received[0].body).toMatchObject({ amount: 1500, currency: "THB", reference: plate });
+      const second = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: otherPlate } });
+      expect(second.status()).toBe(409);
+      expect(await second.json()).toMatchObject({ detail: "txn_id already used for a different purchase" });
+
+      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
+      expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${otherPlate}'`)).toBe(0);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}'`);
+      await db.exec(
+        `DELETE FROM payment_attempts WHERE txn_id = '${txnId}'; DELETE FROM passes WHERE txn_id = '${txnId}'`,
+      );
     }
   });
 
