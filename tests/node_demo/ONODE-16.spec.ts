@@ -383,7 +383,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
     dynamicId,
   }) => {
     const plate = `P${dynamicId}`.slice(0, 10);
-    const txnId = `txn-${dynamicId}`;
+    const txnId = `txn-${dynamicId}-XY`;
     try {
       await db.exec(
         `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plate}', 1500, '${txnId}', 'ACTIVE')`,
@@ -398,7 +398,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
       const body = await res.json();
       const suspicious = (body.suspicious as Array<Record<string, unknown>>).filter((s) => s.plate === plate);
       expect(suspicious).toHaveLength(1);
-      expect(suspicious[0]).toMatchObject({ plate, txn_id: txnId, reason: "no successful payment attempt" });
+      expect(suspicious[0]).toMatchObject({ plate, txn_id: "****XY", reason: "no successful payment attempt" });
 
       expect(
         await db.value(
@@ -479,13 +479,13 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
       expect(suspicious[0]).toMatchObject({
         pass_id: idLow,
         plate: plateP,
-        txn_id: txnIdA,
+        txn_id: "****-a",
         reason: "no successful payment attempt",
       });
       expect(suspicious[1]).toMatchObject({
         pass_id: idHigh,
         plate: plateQ,
-        txn_id: txnIdB,
+        txn_id: "****-b",
         reason: "no successful payment attempt",
       });
 
