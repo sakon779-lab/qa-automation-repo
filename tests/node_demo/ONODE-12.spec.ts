@@ -12,6 +12,10 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * AMENDED by ONODE-29 B4 (TC-018): a reused txn_id whose stored pass differs on any of the
  * four bound fields (vehicle, months, plate, price) now answers 409 'txn_id already used for a
  * different purchase' instead of 200 with the first pass's body.
+ *
+ * AMENDED by ONODE-32 B18 (TC-021): the GET leg of the stateful read-back returns the MASKED
+ * txn_id ('****' + last 2 chars of the stored 'txn_<dynamic_id>XY' = '****XY'), never the clear
+ * stored value, while every other field is unchanged.
  */
 test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id", () => {
   // TC-001 — gateway SUCCESS with txn_id '' → 502, no row (the SEC-ONODE-8-1 replay)
@@ -409,10 +413,12 @@ test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id
     }
   });
 
-  // TC-021 — POST /passes is stateful: GET /passes/{id} reads the row back
-  test("TC-021 GET /passes/{id} reads back the pass that was written", async ({ api, db, mock, dynamicId }) => {
+  // TC-021 — POST /passes is stateful: GET /passes/{id} reads the row back with the MASKED
+  // txn_id. AMENDED by ONODE-32 B18 — the GET leg returns '****XY' (last 2 chars of the stored
+  // 'txn_<dynamic_id>XY'), never the clear stored value; every other field is unchanged.
+  test("TC-021 GET /passes/{id} reads back the pass with the txn_id masked", async ({ api, db, mock, dynamicId }) => {
     const plate = `P${dynamicId}`;
-    const txnId = `txn_${dynamicId}`;
+    const txnId = `txn_${dynamicId}XY`;
     try {
       await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
@@ -423,7 +429,7 @@ test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id
 
       const fetched = await api.get(`/passes/${createdBody.id}`);
       expect(fetched.status()).toBe(200);
-      expect(await fetched.json()).toMatchObject({ plate, price: 1500, txn_id: txnId, status: "ACTIVE" });
+      expect(await fetched.json()).toMatchObject({ plate, price: 1500, txn_id: "****XY", status: "ACTIVE" });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(1);
     } finally {
