@@ -21,6 +21,10 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * matches a forwarded `req-<requestId>` and the app would see no stub (502). The row's intent —
  * the app forwards the incoming X-Request-Id unchanged — is proven by sending the fixture's
  * `requestId` as the header and asserting the gateway recorded exactly that value.
+ *
+ * AMENDED by ONODE-32 B18 (TC-014): the GET leg returns the MASKED txn_id '****_6' (fixed '****'
+ * + last 2 chars of the stored 'txn_6'), never the clear stored value, while every other field
+ * is unchanged.
  */
 
 /** MockServer records a request body as a typed wrapper ({ type, json, rawBytes, ... }); unwrap it. */
@@ -236,7 +240,7 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
     }
   });
 
-  test("TC-014 GET /passes/{id} returns the same body as the POST 201", async ({ api, db, mock }) => {
+  test("TC-014 GET /passes/{id} returns the same body as the POST 201 except the masked txn_id", async ({ api, db, mock }) => {
     await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_6" });
     try {
       const created = await api.post("/passes", {
@@ -256,7 +260,15 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
 
       const fetched = await api.get(`/passes/${createdBody.id}`);
       expect(fetched.status()).toBe(200);
-      expect(await fetched.json()).toEqual(createdBody);
+      expect(await fetched.json()).toMatchObject({
+        vehicle: "car",
+        months: 6,
+        plate: "AB1234",
+        price: 8100,
+        currency: "THB",
+        txn_id: "****_6",
+        status: "ACTIVE",
+      });
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = 'txn_6'`)).toBe(1);
     } finally {

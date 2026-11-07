@@ -8,6 +8,9 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * answer 404 'pass not found' rather than a 500 or a leaked DB error. The positive row (TC-006)
  * seeds a pass through `db`, reads it back over HTTP, asserts the stored body, and deletes only
  * the row it created in a `finally` teardown.
+ *
+ * AMENDED by ONODE-32 B18 (TC-006): the by-id read path masks txn_id to a fixed '****' + its
+ * last 2 characters, so the stored 'txn_1' comes back as '****_1', never the clear value.
  */
 
 test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () => {
@@ -41,7 +44,7 @@ test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () =>
     expect(await res.json()).toEqual({ detail: "pass not found" });
   });
 
-  test("TC-006 existing in-range id → 200 with the stored pass body", async ({ api, db, dynamicId }) => {
+  test("TC-006 existing in-range id → 200 with the stored pass body, txn_id masked to '****_1'", async ({ api, db, dynamicId }) => {
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
         `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, 'txn_1', 'ACTIVE')`,
@@ -56,7 +59,7 @@ test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () =>
         plate: "ABC123",
         price: 4500,
         currency: "THB",
-        txn_id: "txn_1",
+        txn_id: "****_1",
         status: "ACTIVE",
       });
 
