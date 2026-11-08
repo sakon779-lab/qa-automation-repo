@@ -425,7 +425,8 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
     expect(res.status()).toBe(400);
     expect(await res.json()).toMatchObject({ detail: "plate must be a string of at most 10 characters" });
   });
-// TC-017 — E7: gateway DECLINED → 402 'payment declined', no row
+
+  // TC-017 — E7: gateway DECLINED → 402 'payment declined', no row
   test("TC-017 DECLINED charge returns 402 'payment declined' and writes no row", async ({
     api,
     db,
