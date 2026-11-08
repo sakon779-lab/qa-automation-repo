@@ -13,6 +13,12 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * `{ checked, suspicious: [{ plate, txn_id, reason }] }`, and a seeded pass with no successful
  * payment attempt is listed there with its txn_id masked — the same '****' + last 2 form the
  * by-id path must now return.
+ *
+ * AMENDED by ONODE-35 (TC-009): the GET /passes/{id} read now passes through the source-IP
+ * per-client limiter and the process-wide global ceiling (client key = source IP only, X-API-Key
+ * ignored). The app is built with an injected per-client limiter (max 30) and global limiter
+ * (max 300) on a fixed clock, so this single read is not refused by a shared process-wide bucket
+ * and the 200 body is unchanged — the masking assertions are untouched.
  */
 test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   test("TC-001 non-numeric id 'abc' → 404 'pass not found' (validated before any DB query)", async ({ api }) => {
@@ -156,6 +162,11 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
     }
   });
 
+  // AMENDED by ONODE-35: the by-id read now goes through the source-IP per-client limiter and the
+  // process-wide global ceiling (client key = source IP only, X-API-Key ignored). The app is built
+  // with an injected per-client limiter (max 30) and global limiter (max 300) on a fixed clock, so
+  // this single read is not refused by a shared process-wide bucket; the 200 body is unchanged and
+  // the masking assertions below are untouched.
   test("TC-009 GET /passes/reconciliation and GET /passes/{id} both return '****up', never the clear value", async ({ api, db, dynamicId }) => {
     const plate = `R${dynamicId}`.slice(0, 10);
     await db.exec(
@@ -175,6 +186,8 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
       expect(suspicious[0]).toMatchObject({ plate, txn_id: "****up" });
       expect(suspicious[0].txn_id).not.toBe("shared-txn-dup");
 
+      // The by-id read is rate-limited by source IP (ONODE-35 B6) — a single read is admitted and
+      // the masking contract is unchanged.
       const byId = await api.get(`/passes/${dynamicId}`);
       expect(byId.status()).toBe(200);
       const byIdBody = await byId.json();
