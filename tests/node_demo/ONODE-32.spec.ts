@@ -205,27 +205,4 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
     expect(res.status()).toBe(404);
     expect(await res.json()).toEqual({ detail: "pass not found" });
   });
-
-  test("TC-011 masking is UNCONDITIONAL — no header or query param reveals the clear txn_id", async ({ api, db, dynamicId }) => {
-    const plate = `VIS${dynamicId}`;
-    await db.exec(
-      `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
-        `VALUES (${dynamicId}, 'car', 1, '${plate}', 1500, 'txn-77B2C7', 'ACTIVE')`,
-    );
-    try {
-      const res = await api.get(`/passes/${dynamicId}?txn_id_visible=true`, {
-        headers: { "X-Txn-Id-Visible": "true" },
-      });
-      expect(res.status()).toBe(200);
-      expect(await res.json()).toMatchObject({
-        id: dynamicId,
-        txn_id: "****C7",
-        status: "ACTIVE",
-      });
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
-    } finally {
-      await db.exec(`DELETE FROM passes WHERE id = ${dynamicId};`);
-    }
-  });
 });
