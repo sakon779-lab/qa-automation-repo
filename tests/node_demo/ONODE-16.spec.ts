@@ -498,15 +498,17 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // TC-017 — reconciliation is a pure read: 200 with checked and suspicious keys
+  // TC-017 — REWRITTEN by ONODE-40: reconciliation is a pure read taking no body and no query
+  // parameters. The database is shared and parallel, so NO global count is asserted — only the
+  // response SHAPE: 200, `checked` is a number, `suspicious` is a list. A 4xx or a missing key
+  // fails the row.
   // ---------------------------------------------------------------------------
-  test("TC-017 reconciliation is a pure read returning checked and suspicious keys", async ({ api }) => {
+  test("TC-017 reconciliation is a pure read returning a numeric checked and a suspicious list", async ({ api }) => {
     const res = await api.get("/passes/reconciliation");
 
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty("checked");
-    expect(body).toHaveProperty("suspicious");
+    expect(typeof body.checked).toBe("number");
     expect(Array.isArray(body.suspicious)).toBe(true);
   });
 

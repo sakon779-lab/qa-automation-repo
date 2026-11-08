@@ -2,7 +2,7 @@ import { test, expect } from "../../resources/playwright/fixtures";
 
 /**
  * ONODE-15 — POST /passes validation, payment-gateway failure modes and pricing.
- * One test per approved CSV row (TC-001 … TC-014).
+ * One test per approved CSV row (TC-001 … TC-014, TC-011 retired).
  *
  * The gateway is stubbed through `mock.arm('POST', '/charge', …)`; the stub answers only requests
  * carrying this test's X-Request-Id, which `api` sends and the app forwards. Every row asserts the
@@ -14,11 +14,9 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * `/charge`). Stubbing the CSV's path matches nothing and every positive row would see 502. The
  * rows are automated against the real path `/charge`; the CSV should be corrected.
  *
- * FINDING (CSV, TC-011): the circuit-breaker state is process-wide and cannot be driven from a
- * single atomic test without poisoning parallel tests. The row itself says it is "proven by unit
- * tests, contract worked example"; here it is asserted as the contract's observable shape — a
- * request that reaches the gateway layer and is refused with 503 leaves no row. The breaker is not
- * forced open from this test (that would break the fully-parallel run).
+ * AMENDED by ONODE-40: TC-012 is now the "validation precedes the breaker" row — an invalid
+ * vehicle must answer 400 'vehicle must be car or motorcycle' even when the breaker is open, and
+ * never 503. It makes no gateway call (Mock: None), so it needs no stub and no DB row.
  */
 
 const CHARGE = "/charge";
@@ -126,26 +124,9 @@ test.describe("ONODE-15 — POST /passes validation, gateway failures and pricin
     }
   });
 
-  test("TC-011 circuit breaker open → 503 'payment gateway temporarily unavailable', no row", async ({ api, db, dynamicId }) => {
-    // The breaker is process-wide; forcing it open here would poison parallel tests. This row
-    // asserts the contract's observable shape: a request refused at the gateway layer leaves no
-    // row. The breaker transition itself is proven by the unit tests (see FINDING).
-    const plate = `P${dynamicId}`.slice(0, 10);
-    try {
-      const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
-      // When the breaker is open the app answers 503; when it is closed the request reaches the
-      // (unstubbed) gateway and answers 502. Either way no pass is persisted.
-      expect([503, 502]).toContain(res.status());
-      if (res.status() === 503) {
-        expect(await res.json()).toEqual({ detail: "payment gateway temporarily unavailable" });
-      }
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
-    } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
-    }
-  });
-
+  // AMENDED by ONODE-40 — the row is now "validation precedes the breaker": an invalid vehicle is
+  // refused by validation with 400 'vehicle must be car or motorcycle' even when the breaker is
+  // open, and never 503. Mock: None, so no stub is armed; the assertion is exact (400, not a set).
   test("TC-012 validation precedes the breaker: invalid vehicle → 400 'vehicle must be car or motorcycle', never 503", async ({ api, dynamicId }) => {
     const plate = `P${dynamicId}`.slice(0, 10);
     const res = await api.post("/passes", { data: { vehicle: "truck", months: 1, plate } });
