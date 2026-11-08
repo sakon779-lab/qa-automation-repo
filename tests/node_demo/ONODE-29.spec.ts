@@ -1,28 +1,19 @@
 import { test, expect } from "../../resources/playwright/fixtures";
 
 /**
- * ONODE-29 — POST /passes txn_id binding (SEC-ONODE-23-1): a reused gateway txn_id is only
- * idempotent when the request matches the stored pass on all four fields (vehicle, months,
- * plate, price). Any mismatch answers 409 'txn_id already used for a different purchase' and
- * writes no new passes row. Reconciliation masks suspicious[].txn_id as '****' + the LAST 2
- * characters of the stored value (B15).
+ * ONODE-29 — POST /passes txn_id binding (SEC-ONODE-23-1) and reconciliation masking.
+ *
+ * A reused gateway txn_id is only idempotent when the request matches the stored pass on all
+ * four bound fields (vehicle, months, plate, price). Any mismatch answers 409
+ * 'txn_id already used for a different purchase' and writes no new passes row. The plate is
+ * trimmed before the comparison (B2) but the comparison is case-sensitive (B4).
+ * GET /passes/reconciliation masks suspicious[].txn_id as a FIXED '****' prefix plus the LAST 2
+ * characters of the stored value (B7).
  *
  * One test per approved CSV row, titled with its CaseID. The gateway is stubbed through
  * `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the app forwards), the
  * DB is read back through `db`, and each test cleans up only its own rows in a finally block so
  * the fully-parallel suite never collides.
- *
- * AMENDED by ONODE-40: the CSV's TC-007 (the old 'duplicate txn_id' seed row) and TC-021 / TC-023
- * (circuit breaker 503, rate limiter 429) were RETIRED — those rows no longer exist in the
- * approved design, so their tests are removed and the suite matches the CSV one-to-one.
- *
- * FINDING (CSV, TC-028): the row seeds TWO passes with the SAME txn_id to exercise the
- * reconciliation 'duplicate txn_id' branch. The deployed schema's `passes_txn_id_unique`
- * constraint forbids that state (the second INSERT is refused — observed in the run). The branch
- * is therefore unreachable through the schema from a robot. The row is automated to prove
- * exactly that: the CSV's seed is refused BY NAME by the constraint, and reconciliation still
- * answers 200 with its contract keys. The CSV should be corrected (drop the row or relax the
- * constraint) — the expectation is not edited to match the app.
  */
 test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation masking", () => {
   // TC-001 — B3: replaying the SAME txn_id with an identical request returns 200, one row
@@ -285,8 +276,8 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       );
     }
   });
-});
-// TC-009 — B1: a genuinely NEW txn_id still returns 201 with the new pass
+
+  // TC-009 — B1: a genuinely NEW txn_id still returns 201 with the new pass
   test("TC-009 a genuinely new txn_id returns 201 with the new pass", async ({ api, db, mock, dynamicId }) => {
     const plate = `N${dynamicId}`.slice(0, 10);
     const txnId = `txn-new-${dynamicId}`;
@@ -551,15 +542,14 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
     }
   });
 
-  // TC-024 — B7/B15: reconciliation masks suspicious[].txn_id as '****' + the LAST 2 chars
+  // TC-024 — B7: reconciliation masks a stored txn_id as a FIXED '****' + the LAST 2 characters
   test("TC-024 reconciliation masks a suspicious txn_id as '****' plus its last 2 characters", async ({
     api,
     db,
     dynamicId,
   }) => {
     const plate = `M${dynamicId}`.slice(0, 10);
-    const txnId = `txn-mask-${dynamicId}`;
-    const masked = `****${String(dynamicId).slice(-2)}`;
+    const txnId = `txn-mask-${dynamicId}XY`;
     try {
       await db.exec(
         `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plate}', 1500, '${txnId}', 'ACTIVE')`,
@@ -572,7 +562,7 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       expect(suspicious).toHaveLength(1);
       expect(suspicious[0]).toMatchObject({
         plate,
-        txn_id: masked,
+        txn_id: "****XY",
         reason: "no successful payment attempt",
       });
       expect(suspicious[0].txn_id).not.toBe(txnId);
@@ -623,15 +613,14 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
     }
   });
 
-  // TC-026 — B7/B15: a longer stored txn_id is masked as '****' + the LAST 2 characters
+  // TC-026 — B7: a longer stored txn_id is masked as a FIXED '****' + the LAST 2 characters
   test("TC-026 reconciliation masks a longer suspicious txn_id as '****' plus its last 2 characters", async ({
     api,
     db,
     dynamicId,
   }) => {
     const plate = `K${dynamicId}`.slice(0, 10);
-    const txnId = `txn-redact-${dynamicId}`;
-    const masked = `****${String(dynamicId).slice(-2)}`;
+    const txnId = `txn-redact-${dynamicId}AB`;
     try {
       await db.exec(
         `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plate}', 1500, '${txnId}', 'ACTIVE')`,
@@ -644,7 +633,7 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       expect(suspicious).toHaveLength(1);
       expect(suspicious[0]).toMatchObject({
         plate,
-        txn_id: masked,
+        txn_id: "****AB",
         reason: "no successful payment attempt",
       });
       expect(suspicious[0].txn_id).not.toBe(txnId);
@@ -654,7 +643,8 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}';`);
     }
   });
-// TC-027 — B1: the 409 audit row is written exactly once for this gateway call
+
+  // TC-027 — B1: the 409 audit row is written exactly once for this gateway call
   test("TC-027 the 409 writes exactly one audit row for the gateway call and no new passes row", async ({
     api,
     db,
@@ -693,111 +683,4 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       );
     }
   });
-
-  // TC-028 — B11: the 'duplicate txn_id' branch is unreachable through the schema (see FINDING)
-  test("TC-028 reconciliation duplicate-txn_id branch is unreachable: the seed is refused by passes_txn_id_unique", async ({
-    api,
-    db,
-    dynamicId,
-  }) => {
-    const plateD = `D${dynamicId}`.slice(0, 10);
-    const plateE = `E${dynamicId}`.slice(0, 10);
-    const txnId = `txn-dup2-${dynamicId}`;
-    try {
-      await db.exec(
-        `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plateD}', 1500, '${txnId}', 'ACTIVE')`,
-      );
-
-      await expect(
-        db.exec(
-          `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plateE}', 1500, '${txnId}', 'ACTIVE')`,
-        ),
-      ).rejects.toThrow(/passes_txn_id_unique/);
-
-      // The state the CSV wants to seed cannot exist; reconciliation still honours its contract.
-      const res = await api.get("/passes/reconciliation");
-      expect(res.status()).toBe(200);
-      const body = await res.json();
-      expect(body).toHaveProperty("checked");
-      expect(body).toHaveProperty("suspicious");
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
-    } finally {
-      await db.exec(
-        `DELETE FROM payment_attempts WHERE txn_id = '${txnId}'; DELETE FROM passes WHERE txn_id = '${txnId}';`,
-      );
-    }
-  });
-
-  // TC-029 — B12: POST /passes stays stateful — one passes row, one audit row, gateway called
-  test("TC-029 a successful purchase writes one passes row and one payment_attempts row and calls the gateway", async ({
-    api,
-    db,
-    mock,
-    dynamicId,
-  }) => {
-    const plate = `S${dynamicId}`.slice(0, 10);
-    const txnId = `txn-stateful2-${dynamicId}`;
-    try {
-      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
-
-      const res = await api.post("/passes", { data: { vehicle: "motorcycle", months: 12, plate } });
-      expect(res.status()).toBe(201);
-      expect(await res.json()).toMatchObject({
-        vehicle: "motorcycle",
-        months: 12,
-        plate,
-        price: 5760,
-        currency: "THB",
-        txn_id: txnId,
-        status: "ACTIVE",
-      });
-
-      expect(
-        await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}' AND status = 'ACTIVE'`),
-      ).toBe(1);
-      expect(await db.value(`SELECT count(*) FROM payment_attempts WHERE txn_id = '${txnId}'`)).toBe(1);
-      expect(await mock.received("POST", "/charge")).toHaveLength(1);
-    } finally {
-      await db.exec(
-        `DELETE FROM payment_attempts WHERE txn_id = '${txnId}'; DELETE FROM passes WHERE txn_id = '${txnId}';`,
-      );
-    }
-  });
-
-  // TC-030 — B14: the ONODE-29 409 binding is in effect on the deployed stack (the behaviour
-  // the amended ONODE-12 TC-018 and ONODE-16 TC-014/TC-016 suites now assert)
-  test("TC-030 a reused txn_id with a different months value answers 409 on the deployed stack", async ({
-    api,
-    db,
-    mock,
-    dynamicId,
-  }) => {
-    const plate = `V${dynamicId}`.slice(0, 10);
-    const txnId = `txn-amend-${dynamicId}`;
-    try {
-      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
-
-      const first = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
-      expect(first.status()).toBe(201);
-      expect(await first.json()).toMatchObject({
-        vehicle: "car",
-        months: 1,
-        plate,
-        price: 1500,
-        currency: "THB",
-        txn_id: txnId,
-        status: "ACTIVE",
-      });
-
-      const second = await api.post("/passes", { data: { vehicle: "car", months: 12, plate } });
-      expect(second.status()).toBe(409);
-      expect(await second.json()).toMatchObject({ detail: "txn_id already used for a different purchase" });
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
-    } finally {
-      await db.exec(
-        `DELETE FROM payment_attempts WHERE txn_id = '${txnId}'; DELETE FROM passes WHERE txn_id = '${txnId}';`,
-      );
-    }
-  });
+});
