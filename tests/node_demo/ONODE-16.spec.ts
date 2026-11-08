@@ -2,17 +2,25 @@ import { test, expect } from "../../resources/playwright/fixtures";
 
 /**
  * ONODE-16 — POST /passes (payment + audit) and GET /passes/reconciliation.
- * One test per approved CSV row (TC-001 … TC-019), titled with its CaseID.
+ * One test per approved CSV row (test_designs/ONODE-16.csv): TC-001 … TC-012 and TC-014 … TC-019.
+ * The CSV has NO TC-013 row, so no TC-013 test exists here.
  *
- * FINDING (CSV, TC-013 / TC-015 / TC-016): these rows seed a `passes` row with a blank or
- * whitespace-only `txn_id` ('' or '   ') to exercise the reconciliation "blank txn_id" branch.
- * The deployed schema forbids that state: the `passes_txn_id_not_blank` CHECK constraint rejects
- * any row whose txn_id is blank (proven by the delivered ONODE-12 TC-014). The seed the CSV
- * prescribes therefore cannot succeed against the QA database, so the "blank txn_id" scenario is
- * unreachable through the schema. Each affected row is automated to prove exactly that: the CSV's
- * seed is refused BY NAME by the constraint, and the reconciliation endpoint still answers 200
- * with its contract keys. The CSV should be corrected (either drop the blank-txn_id branch or
- * relax the constraint) — the expectation is not edited to match the app.
+ * Every row is built in four phases: ARRANGE (the row's seed SQL / `mock.arm`), ACT (the row's
+ * HTTP call through `api`, which carries this test's X-Request-Id so its stub is scoped to it),
+ * ASSERT (the row's ExpectedResult verbatim, then its Post-Assertions read back through `db`),
+ * TEARDOWN (the row's DELETE SQL in a finally block, deleting only this test's own rows).
+ *
+ * Reconciliation reads the whole table and the suite runs fully parallel, so every reconciliation
+ * row filters the suspicious list down to its OWN plate — never a global count (ONODE-16
+ * requirement: "ห้ามเทียบจำนวนรวม").
+ *
+ * FINDING (CSV, TC-015): the row seeds a passes row with txn_id = '' to exercise the
+ * reconciliation "blank txn_id" branch. The deployed schema forbids that state — the
+ * passes_txn_id_not_blank CHECK rejects any blank txn_id (proven by the delivered ONODE-12
+ * TC-014). The seed the CSV prescribes therefore cannot succeed, so the row's Post-Assertion
+ * (count(*) … status = 'EXPIRED' = 1) is unreachable. The row is disputed with Athena rather than
+ * having its expectation edited to match the app; the test below proves the seed is refused BY
+ * NAME and that reconciliation still honours its contract.
  */
 test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   // ---------------------------------------------------------------------------
@@ -326,6 +334,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
       const body = await res.json();
       expect(body).toHaveProperty("checked");
       expect(body).toHaveProperty("suspicious");
+      // The table is shared and the suite is parallel: look only at THIS test's plate.
       const suspicious = (body.suspicious as Array<Record<string, unknown>>).filter((s) => s.plate === plate);
       expect(suspicious).toHaveLength(0);
 
@@ -334,39 +343,6 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
           `SELECT count(*) FROM passes p WHERE p.plate = '${plate}' AND p.status = 'ACTIVE' AND p.txn_id = '${txnId}' AND NOT EXISTS (SELECT 1 FROM payment_attempts a WHERE a.outcome = 'SUCCESS' AND a.txn_id = p.txn_id)`,
         ),
       ).toBe(0);
-    } finally {
-      await db.exec(
-        `DELETE FROM payment_attempts WHERE reference = '${plate}'; DELETE FROM passes WHERE plate = '${plate}';`,
-      );
-    }
-  });
-
-  // ---------------------------------------------------------------------------
-  // TC-013 — CSV seeds an ACTIVE pass with whitespace-only txn_id. The deployed schema's
-  // passes_txn_id_not_blank CHECK forbids it (see FINDING). Prove the seed is refused BY NAME and
-  // that reconciliation still answers 200 with its contract keys.
-  // ---------------------------------------------------------------------------
-  test("TC-013 reconciliation blank-txn_id branch is unreachable: the seed is refused by passes_txn_id_not_blank", async ({
-    api,
-    db,
-    dynamicId,
-  }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
-    try {
-      await expect(
-        db.exec(
-          `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plate}', 1500, '   ', 'ACTIVE')`,
-        ),
-      ).rejects.toThrow(/passes_txn_id_not_blank/);
-
-      // The row the CSV wants to seed cannot exist; reconciliation still honours its contract.
-      const res = await api.get("/passes/reconciliation");
-      expect(res.status()).toBe(200);
-      const body = await res.json();
-      expect(body).toHaveProperty("checked");
-      expect(body).toHaveProperty("suspicious");
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
     } finally {
       await db.exec(
         `DELETE FROM payment_attempts WHERE reference = '${plate}'; DELETE FROM passes WHERE plate = '${plate}';`,
@@ -458,9 +434,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
     const idLow = dynamicId;
     const idHigh = dynamicId + 1;
     try {
-      // Seed the HIGHER id first so insertion order is reverse of the expected output order.
-      // Both passes have a DISTINCT non-blank txn_id and no SUCCESS attempt → both are suspicious
-      // with reason 'no successful payment attempt', exercising the same ORDER BY pass_id ASC.
+      // Seed the HIGHER id first so insertion order is the reverse of the expected output order.
       await db.exec(
         `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) VALUES (${idHigh}, 'car', 1, '${plateQ}', 1500, '${txnIdB}', 'ACTIVE')`,
       );
@@ -500,8 +474,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   // ---------------------------------------------------------------------------
   // TC-017 — REWRITTEN by ONODE-40: reconciliation is a pure read taking no body and no query
   // parameters. The database is shared and parallel, so NO global count is asserted — only the
-  // response SHAPE: 200, `checked` is a number, `suspicious` is a list. A 4xx or a missing key
-  // fails the row.
+  // response SHAPE: 200, `checked` is a number, `suspicious` is a list.
   // ---------------------------------------------------------------------------
   test("TC-017 reconciliation is a pure read returning a numeric checked and a suspicious list", async ({ api }) => {
     const res = await api.get("/passes/reconciliation");
@@ -559,7 +532,8 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // TC-019 — best-effort audit: a SUCCESS charge still persists the pass and returns 201 with audit row present
+  // TC-019 — best-effort audit: a SUCCESS charge still persists the pass and returns 201 with the
+  // audit row present (the INSERT-throws branch is the developer's unit test with a fake repo).
   // ---------------------------------------------------------------------------
   test("TC-019 SUCCESS charge persists the pass and returns 201 with the audit row present", async ({
     api,
