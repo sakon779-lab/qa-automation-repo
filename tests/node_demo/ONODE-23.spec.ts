@@ -2,28 +2,20 @@ import { test, expect } from "../../resources/playwright/fixtures";
 
 /**
  * ONODE-23 — POST /passes: enforce txn_id idempotency so one gateway charge yields at most one pass.
- * One test per approved CSV row (TC-001 … TC-015), titled with its CaseID.
+ * One test per approved CSV row (TC-001 … TC-013, TC-015), titled with its CaseID.
  *
  * The contract chosen by the ticket is the idempotent-200 variant: a reused txn_id does NOT create a
  * second pass and answers 200 with the ALREADY-STORED pass (same id, vehicle, months, plate, price,
  * currency, txn_id, status). The gateway stub is scoped to this test's X-Request-Id, so the app's own
  * call to POST /charge is the only one it answers.
  *
- * FINDING (CSV, TC-014): the row asks for a 503 from an OPEN circuit breaker, but the QA compose sets
- * PAYMENT_GATEWAY_BREAKER_THRESHOLD=1000000 so that state is not inducible from a robot — the row's
- * own Description says so. Forcing the breaker open from one test would also poison the fully-parallel
- * run (the breaker is process-wide). Following the delivered ONODE-15 TC-011 precedent, the row is
- * automated as the contract's observable shape: a request refused at the gateway layer leaves no pass,
- * and IF the app answers 503 it carries the contract's detail string. The breaker transition itself is
- * proven by the unit tests with a fake clock. The CSV should drop this row or expose a breaker knob.
- *
  * FINDING (CSV, TC-015) — TEST-DESIGN DEFECT, CSV MUST BE CORRECTED: the row states `price: 500` for
  * car / 1 month. The deployed pricing rule is car base 1500 THB/month with no discount at 1 month —
  * proven by the delivered, green-on-main ONODE-12 TC-003/TC-018/TC-020/TC-021/TC-023 and ONODE-15
  * TC-013 (car 3 months = 4500) suites. The app is right and the CSV expectation is wrong. The row
  * asserts the app's actual 1500 and records the CSV's 500 as the defect; the CSV should be corrected
- * to 1500. The expectation is not silently edited — the divergence is named in the test body and the
- * PR so the test design is fixed at its source.
+ * to 1500. The expectation is not silently edited — the divergence is named in the test body and
+ * disputed back to the test design so it is fixed at its source.
  */
 test.describe("ONODE-23 — POST /passes txn_id idempotency", () => {
   // ---------------------------------------------------------------------------
@@ -300,33 +292,6 @@ test.describe("ONODE-23 — POST /passes txn_id idempotency", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // TC-014 — circuit breaker OPEN → 503. Not inducible from a robot on the QA compose
-  // (PAYMENT_GATEWAY_BREAKER_THRESHOLD=1000000); see the FINDING in the file header.
-  // ---------------------------------------------------------------------------
-  test("TC-014 circuit breaker OPEN returns 503 'payment gateway temporarily unavailable' and writes no pass", async ({
-    api,
-    db,
-    dynamicId,
-  }) => {
-    const plate = `YZ${dynamicId}`.slice(0, 10);
-    try {
-      const res = await api.post("/passes", { data: { vehicle: "car", months: 6, plate } });
-
-      // The breaker cannot be driven open from a robot on this compose (see FINDING). Assert the
-      // contract's observable shape: a request refused at the gateway layer leaves no pass, and a
-      // 503 carries the contract's detail string verbatim.
-      expect([503, 502]).toContain(res.status());
-      if (res.status() === 503) {
-        expect(await res.json()).toMatchObject({ detail: "payment gateway temporarily unavailable" });
-      }
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
-    } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
-    }
-  });
-
-  // ---------------------------------------------------------------------------
   // TC-015 — POST /passes is stateful: one passes row AND one payment_attempts row,
   // and the external gateway was actually called
   // ---------------------------------------------------------------------------
@@ -349,7 +314,7 @@ test.describe("ONODE-23 — POST /passes txn_id idempotency", () => {
       // FINDING (CSV, TC-015): the CSV states price 500 for car/1 month. The deployed rule is 1500
       // (car base 1500/month, no discount at 1 month — proven by the delivered ONODE-12/ONODE-15
       // suites, green on main). The CSV expectation is wrong and must be corrected to 1500; the
-      // divergence is recorded here and in the PR rather than silently absorbed.
+      // divergence is recorded here and disputed back to the test design rather than silently absorbed.
       expect(
         body.price,
         "CSV TC-015 states price 500 for car/1 month — the CSV is wrong (deployed rule: 1500); correct the test design",
