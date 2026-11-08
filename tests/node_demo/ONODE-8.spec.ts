@@ -25,6 +25,12 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * AMENDED by ONODE-32 B18 (TC-014): the GET leg returns the MASKED txn_id '****_6' (fixed '****'
  * + last 2 chars of the stored 'txn_6'), never the clear stored value, while every other field
  * is unchanged.
+ *
+ * AMENDED by ONODE-38 (TC-001, TC-002, TC-003, TC-013, TC-014, TC-015, TC-016): each of these
+ * rows mocks its OWN txn_id built from the test's dynamic id ('txn_<dynamic_id>'), never a
+ * constant 'txn_1' … 'txn_8'. Since ONODE-23 the txn_id column is UNIQUE, so a constant mocked
+ * id collides with any parallel test that mocks the same value (the second gets 409). TC-014
+ * keeps a fixed '_6' suffix after the dynamic id so the masked GET body stays '****_6'.
  */
 
 /** MockServer records a request body as a typed wrapper ({ type, json, rawBytes, ... }); unwrap it. */
@@ -37,8 +43,9 @@ function recordedJson(body: unknown): unknown {
 }
 
 test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})", () => {
-  test("TC-001 car 6 months, gateway SUCCESS → 201 price 8100 ACTIVE and one row persisted", async ({ api, db, mock }) => {
-    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_1" });
+  test("TC-001 car 6 months, gateway SUCCESS → 201 price 8100 ACTIVE and one row persisted", async ({ api, db, mock, dynamicId }) => {
+    const txnId = `txn_${dynamicId}`;
+    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
     try {
       const res = await api.post("/passes", {
         data: { vehicle: "car", months: 6, plate: "AB1234" },
@@ -51,21 +58,22 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
         plate: "AB1234",
         price: 8100,
         currency: "THB",
-        txn_id: "txn_1",
+        txn_id: txnId,
         status: "ACTIVE",
       });
       expect(typeof body.id).toBe("number");
 
       expect(
-        await db.value(`SELECT count(*) FROM passes WHERE plate = 'AB1234' AND txn_id = 'txn_1'`),
+        await db.value(`SELECT count(*) FROM passes WHERE plate = 'AB1234' AND txn_id = '${txnId}'`),
       ).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE txn_id = 'txn_1'`);
+      await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}'`);
     }
   });
 
-  test("TC-002 motorcycle 12 months → 201 price 5760 and gateway charged amount 5760 THB ref MC99", async ({ api, db, mock }) => {
-    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_2" });
+  test("TC-002 motorcycle 12 months → 201 price 5760 and gateway charged amount 5760 THB ref MC99", async ({ api, db, mock, dynamicId }) => {
+    const txnId = `txn_${dynamicId}`;
+    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
     try {
       const res = await api.post("/passes", {
         data: { vehicle: "motorcycle", months: 12, plate: "MC99" },
@@ -77,7 +85,7 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
         plate: "MC99",
         price: 5760,
         currency: "THB",
-        txn_id: "txn_2",
+        txn_id: txnId,
         status: "ACTIVE",
       });
 
@@ -89,14 +97,15 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
         reference: "MC99",
       });
 
-      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = 'txn_2'`)).toBe(1);
+      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE txn_id = 'txn_2'`);
+      await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}'`);
     }
   });
 
-  test("TC-003 plate '  AB1  ' is trimmed → 201 plate AB1 price 1500 and stored trimmed", async ({ api, db, mock }) => {
-    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_3" });
+  test("TC-003 plate '  AB1  ' is trimmed → 201 plate AB1 price 1500 and stored trimmed", async ({ api, db, mock, dynamicId }) => {
+    const txnId = `txn_${dynamicId}`;
+    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
     try {
       const res = await api.post("/passes", {
         data: { vehicle: "car", months: 1, plate: "  AB1  " },
@@ -108,13 +117,13 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
         plate: "AB1",
         price: 1500,
         currency: "THB",
-        txn_id: "txn_3",
+        txn_id: txnId,
         status: "ACTIVE",
       });
 
-      expect(await db.value(`SELECT plate FROM passes WHERE txn_id = 'txn_3'`)).toBe("AB1");
+      expect(await db.value(`SELECT plate FROM passes WHERE txn_id = '${txnId}'`)).toBe("AB1");
     } finally {
-      await db.exec(`DELETE FROM passes WHERE txn_id = 'txn_3'`);
+      await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}'`);
     }
   });
 
@@ -216,17 +225,19 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
     expect(await res.json()).toEqual({ detail: "pass not found" });
   });
 
-  test("TC-013 X-Request-Id is forwarded to the gateway unchanged", async ({ api, db, mock, requestId }) => {
+  test("TC-013 X-Request-Id is forwarded to the gateway unchanged", async ({ api, db, mock, requestId, dynamicId }) => {
     // The mock fixture scopes stubs to `requestId`; send that same value so the app's forwarded
-    // header matches the stub (see FINDING).
-    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_5" });
+    // header matches the stub (see FINDING). AMENDED by ONODE-38: the stub returns this test's
+    // own txn_id, never the constant 'txn_5'.
+    const txnId = `txn_${dynamicId}`;
+    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
     try {
       const res = await api.post("/passes", {
         data: { vehicle: "car", months: 6, plate: "AB1234" },
         headers: { "X-Request-Id": requestId },
       });
       expect(res.status()).toBe(201);
-      expect(await res.json()).toMatchObject({ txn_id: "txn_5", status: "ACTIVE" });
+      expect(await res.json()).toMatchObject({ txn_id: txnId, status: "ACTIVE" });
 
       const charged = await mock.received("POST", "/charge");
       expect(charged).toHaveLength(1);
@@ -234,14 +245,17 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
       const headers = charged[0].headers as Record<string, string[]>;
       expect(headers["x-request-id"]).toEqual([requestId]);
 
-      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = 'txn_5'`)).toBe(1);
+      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE txn_id = 'txn_5'`);
+      await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}'`);
     }
   });
 
-  test("TC-014 GET /passes/{id} returns the same body as the POST 201 except the masked txn_id", async ({ api, db, mock }) => {
-    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_6" });
+  test("TC-014 GET /passes/{id} returns the same body as the POST 201 except the masked txn_id", async ({ api, db, mock, dynamicId }) => {
+    // AMENDED by ONODE-38: the mocked txn_id is this test's own, with a fixed '_6' suffix so the
+    // masked GET body stays '****_6' (last 2 chars of 'txn_<dynamic_id>_6').
+    const txnId = `txn_${dynamicId}_6`;
+    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
     try {
       const created = await api.post("/passes", {
         data: { vehicle: "car", months: 6, plate: "AB1234" },
@@ -254,7 +268,7 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
         plate: "AB1234",
         price: 8100,
         currency: "THB",
-        txn_id: "txn_6",
+        txn_id: txnId,
         status: "ACTIVE",
       });
 
@@ -270,14 +284,16 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
         status: "ACTIVE",
       });
 
-      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = 'txn_6'`)).toBe(1);
+      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE txn_id = 'txn_6'`);
+      await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}'`);
     }
   });
 
-  test("TC-015 vehicle validated first → 400 vehicle error, gateway never called, no row", async ({ api, db, mock }) => {
-    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_7" });
+  test("TC-015 vehicle validated first → 400 vehicle error, gateway never called, no row", async ({ api, db, mock, dynamicId }) => {
+    // AMENDED by ONODE-38: the stub returns this test's own txn_id, never the constant 'txn_7'.
+    const txnId = `txn_${dynamicId}`;
+    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
     const res = await api.post("/passes", {
       data: { vehicle: "truck", months: 99, plate: "ABCDEFGHIJK" },
     });
@@ -288,14 +304,16 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
     expect(await db.value(`SELECT count(*) FROM passes WHERE plate = 'ABCDEFGHIJK'`)).toBe(0);
   });
 
-  test("TC-016 deployed app uses real Postgres and real gateway: row persisted AND gateway reached", async ({ api, db, mock }) => {
-    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_8" });
+  test("TC-016 deployed app uses real Postgres and real gateway: row persisted AND gateway reached", async ({ api, db, mock, dynamicId }) => {
+    // AMENDED by ONODE-38: the stub returns this test's own txn_id, never the constant 'txn_8'.
+    const txnId = `txn_${dynamicId}`;
+    await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
     try {
       const res = await api.post("/passes", {
         data: { vehicle: "car", months: 6, plate: "AB1234" },
       });
       expect(res.status()).toBe(201);
-      expect(await res.json()).toMatchObject({ txn_id: "txn_8", status: "ACTIVE" });
+      expect(await res.json()).toMatchObject({ txn_id: txnId, status: "ACTIVE" });
 
       const charged = await mock.received("POST", "/charge");
       expect(charged).toHaveLength(1);
@@ -305,9 +323,9 @@ test.describe("ONODE-8 — buy a monthly pass (POST /passes, GET /passes/{id})",
         reference: "AB1234",
       });
 
-      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = 'txn_8'`)).toBe(1);
+      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
     } finally {
-      await db.exec(`DELETE FROM passes WHERE txn_id = 'txn_8'`);
+      await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}'`);
     }
   });
 });

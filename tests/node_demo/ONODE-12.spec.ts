@@ -16,6 +16,11 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * AMENDED by ONODE-32 B18 (TC-021): the GET leg of the stateful read-back returns the MASKED
  * txn_id ('****' + last 2 chars of the stored 'txn_<dynamic_id>XY' = '****XY'), never the clear
  * stored value, while every other field is unchanged.
+ *
+ * AMENDED by ONODE-38 (TC-005, TC-013): the gateway stub returns this test's OWN txn_id
+ * ('txn_<dynamic_id>'), never a constant. Since ONODE-23 the txn_id column is UNIQUE, so a
+ * constant mocked id collides with any parallel test that mocks the same value (the second
+ * gets 409). Every value the system stores is the test's own data.
  */
 test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id", () => {
   // TC-001 — gateway SUCCESS with txn_id '' → 502, no row (the SEC-ONODE-8-1 replay)
@@ -110,11 +115,14 @@ test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id
     }
   });
 
-  // TC-005 — gateway DECLINED → 402, no row
+  // TC-005 — gateway DECLINED → 402, no row. AMENDED by ONODE-38: the stub returns this test's
+  // own txn_id ('txn_<dynamic_id>'), never the constant 'txn_1' that collided with ONODE-8 TC-001
+  // under the UNIQUE txn_id column.
   test("TC-005 returns 402 when the gateway declines the charge", async ({ api, db, mock, dynamicId }) => {
     const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
     try {
-      await mock.arm("POST", "/charge", 200, { status: "DECLINED", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "DECLINED", txn_id: txnId });
 
       const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
       expect(res.status()).toBe(402);
@@ -235,17 +243,18 @@ test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id
   // TC-013 — the incoming X-Request-Id is forwarded to the gateway charge call
   test("TC-013 forwards the incoming X-Request-Id to the gateway", async ({ api, db, mock, dynamicId, requestId }) => {
     const plate = `P${dynamicId}`;
+    const txnId = `txn_${dynamicId}`;
     // The stub is armed for this test's requestId; the app must forward that same value
     // to the gateway, so the charge call only matches if the header was passed through.
     try {
-      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: "txn_1" });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
 
       const res = await api.post("/passes", {
         data: { vehicle: "car", months: 1, plate },
         headers: { "X-Request-Id": requestId },
       });
       expect(res.status()).toBe(201);
-      expect(await res.json()).toMatchObject({ plate, txn_id: "txn_1", status: "ACTIVE" });
+      expect(await res.json()).toMatchObject({ plate, txn_id: txnId, status: "ACTIVE" });
 
       const received = await mock.received("POST", "/charge");
       expect(received).toHaveLength(1);
