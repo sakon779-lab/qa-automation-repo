@@ -7,17 +7,21 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * writes no new passes row. Reconciliation masks suspicious[].txn_id as '****' + the LAST 2
  * characters of the stored value (B15).
  *
- * One test per approved CSV row (TC-001 … TC-030), titled with its CaseID. The gateway is
- * stubbed through `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the app
- * forwards), the DB is read back through `db`, and each test cleans up only its own rows in a
- * finally block so the fully-parallel suite never collides.
+ * One test per approved CSV row, titled with its CaseID. The gateway is stubbed through
+ * `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the app forwards), the
+ * DB is read back through `db`, and each test cleans up only its own rows in a finally block so
+ * the fully-parallel suite never collides.
  *
- * FINDING (CSV, TC-007 / TC-028): both rows seed TWO passes with the SAME txn_id to exercise the
+ * AMENDED by ONODE-40: the CSV's TC-007 (the old 'duplicate txn_id' seed row) and TC-021 / TC-023
+ * (circuit breaker 503, rate limiter 429) were RETIRED — those rows no longer exist in the
+ * approved design, so their tests are removed and the suite matches the CSV one-to-one.
+ *
+ * FINDING (CSV, TC-028): the row seeds TWO passes with the SAME txn_id to exercise the
  * reconciliation 'duplicate txn_id' branch. The deployed schema's `passes_txn_id_unique`
  * constraint forbids that state (the second INSERT is refused — observed in the run). The branch
- * is therefore unreachable through the schema from a robot. Each row is automated to prove
+ * is therefore unreachable through the schema from a robot. The row is automated to prove
  * exactly that: the CSV's seed is refused BY NAME by the constraint, and reconciliation still
- * answers 200 with its contract keys. The CSV should be corrected (drop the rows or relax the
+ * answers 200 with its contract keys. The CSV should be corrected (drop the row or relax the
  * constraint) — the expectation is not edited to match the app.
  */
 test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation masking", () => {
@@ -237,41 +241,6 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       const second = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: lowerPlate } });
       expect(second.status()).toBe(409);
       expect(await second.json()).toMatchObject({ detail: "txn_id already used for a different purchase" });
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
-    } finally {
-      await db.exec(
-        `DELETE FROM payment_attempts WHERE txn_id = '${txnId}'; DELETE FROM passes WHERE txn_id = '${txnId}';`,
-      );
-    }
-  });
-
-  // TC-007 — B1: the 'duplicate txn_id' branch is unreachable through the schema (see FINDING)
-  test("TC-007 reconciliation duplicate-txn_id branch is unreachable: the seed is refused by passes_txn_id_unique", async ({
-    api,
-    db,
-    dynamicId,
-  }) => {
-    const plateD = `D${dynamicId}`.slice(0, 10);
-    const plateE = `E${dynamicId}`.slice(0, 10);
-    const txnId = `txn-dup-${dynamicId}`;
-    try {
-      await db.exec(
-        `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plateD}', 1500, '${txnId}', 'ACTIVE')`,
-      );
-
-      await expect(
-        db.exec(
-          `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plateE}', 1500, '${txnId}', 'ACTIVE')`,
-        ),
-      ).rejects.toThrow(/passes_txn_id_unique/);
-
-      // The state the CSV wants to seed cannot exist; reconciliation still honours its contract.
-      const res = await api.get("/passes/reconciliation");
-      expect(res.status()).toBe(200);
-      const body = await res.json();
-      expect(body).toHaveProperty("checked");
-      expect(body).toHaveProperty("suspicious");
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
     } finally {
@@ -541,31 +510,6 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
     }
   });
 
-  // TC-021 — E11: circuit breaker OPEN → 503. Not inducible from a robot on the QA compose
-  // (PAYMENT_GATEWAY_BREAKER_THRESHOLD=1000000, as the row's own Description states); the row
-  // documents the contract's 503 shape. Following the delivered ONODE-23 TC-014 precedent, the
-  // observable half is asserted: a request refused at the gateway layer leaves no pass, and IF
-  // the app answers 503 it carries the contract's detail string verbatim.
-  test("TC-021 circuit breaker OPEN returns 503 'payment gateway temporarily unavailable' and writes no row", async ({
-    api,
-    db,
-    dynamicId,
-  }) => {
-    const plate = `P${dynamicId}`.slice(0, 10);
-    try {
-      const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
-
-      expect([503, 502]).toContain(res.status());
-      if (res.status() === 503) {
-        expect(await res.json()).toMatchObject({ detail: "payment gateway temporarily unavailable" });
-      }
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
-    } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
-    }
-  });
-
   // TC-022 — E12: reused txn_id differing in vehicle, months AND plate → 409, no new row
   test("TC-022 a reused txn_id differing in vehicle, months and plate returns 409 and writes no new row", async ({
     api,
@@ -606,26 +550,6 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
     }
   });
 
-  // TC-023 — B1: the per-client rate limit (429) is UNCHANGED and not inducible from a robot
-  // (QA compose sets PASSES_RATE_LIMIT_MAX=1000000, as the row's own Description states). The
-  // row documents the 429 shape; the limiter itself is proven by unit tests with a fake clock.
-  // The observable half asserted here: a normal request is not rate-limited and leaves no row
-  // for the RL plate (the request is rejected at validation, so nothing is persisted).
-  test("TC-023 the rate limiter does not fire for a normal request and writes no row", async ({ api, db, dynamicId }) => {
-    const plate = `RL${dynamicId}`.slice(0, 10);
-    try {
-      const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
-
-      if (res.status() === 429) {
-        expect(await res.json()).toMatchObject({ detail: "too many requests" });
-      }
-
-      expect(await db.value(`SELECT count(*) FROM passes WHERE plate = '${plate}'`)).toBe(0);
-    } finally {
-      await db.exec(`DELETE FROM passes WHERE plate = '${plate}';`);
-    }
-  });
-
   // TC-024 — B7/B15: reconciliation masks suspicious[].txn_id as '****' + the LAST 2 chars
   test("TC-024 reconciliation masks a suspicious txn_id as '****' plus its last 2 characters", async ({
     api,
@@ -657,7 +581,8 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}';`);
     }
   });
-// TC-025 — B1: the 409 mismatch still writes the payment_attempts audit row, no new pass
+
+  // TC-025 — B1: the 409 mismatch still writes the payment_attempts audit row, no new pass
   test("TC-025 the 409 mismatch writes the payment_attempts audit row and no new passes row", async ({
     api,
     db,
@@ -728,8 +653,7 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
       await db.exec(`DELETE FROM passes WHERE txn_id = '${txnId}';`);
     }
   });
-
-  // TC-027 — B1: the 409 audit row is written exactly once for this gateway call
+// TC-027 — B1: the 409 audit row is written exactly once for this gateway call
   test("TC-027 the 409 writes exactly one audit row for the gateway call and no new passes row", async ({
     api,
     db,
