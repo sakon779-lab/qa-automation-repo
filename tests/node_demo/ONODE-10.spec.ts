@@ -10,7 +10,11 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * the row it created in a `finally` teardown.
  *
  * AMENDED by ONODE-32 B18 (TC-006): the by-id read path masks txn_id to a fixed '****' + its
- * last 2 characters, so the stored 'txn_1' comes back as '****_1', never the clear value.
+ * last 2 characters, so the stored 'txn_<dynamic_id>_1' comes back as '****_1', never the clear
+ * value.
+ *
+ * AMENDED by ONODE-48 (TC-006): the seed uses a per-row dynamic txn_id ('txn_<dynamic_id>_1') so
+ * a run that dies before teardown cannot poison later runs under the UNIQUE passes_txn_id index.
  */
 
 test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () => {
@@ -45,14 +49,16 @@ test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () =>
   });
 
   test("TC-006 existing in-range id → 200 with the stored pass body, txn_id masked to '****_1'", async ({ api, db, dynamicId }) => {
+    const txnId = `txn_${dynamicId}_1`;
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
-        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, 'txn_1', 'ACTIVE')`,
+        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, '${txnId}', 'ACTIVE')`,
     );
     try {
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
-      expect(await res.json()).toEqual({
+      const body = await res.json();
+      expect(body).toEqual({
         id: dynamicId,
         vehicle: "car",
         months: 3,
@@ -62,6 +68,8 @@ test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () =>
         txn_id: "****_1",
         status: "ACTIVE",
       });
+      // The clear stored value MUST NOT appear anywhere in the response body.
+      expect(JSON.stringify(body)).not.toContain(txnId);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
     } finally {

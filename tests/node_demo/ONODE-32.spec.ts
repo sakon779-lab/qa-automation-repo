@@ -23,6 +23,11 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * AMENDED by ONODE-42 B1 (TC-009): GET /passes/reconciliation now requires the
  * `X-Reconciliation-Token` header equal to RECONCILIATION_TOKEN; without it the endpoint answers
  * 401. TC-009 therefore sends the token on its reconciliation call.
+ *
+ * AMENDED by ONODE-48 (TC-004/TC-007/TC-008/TC-009): the seed uses a per-row dynamic txn_id
+ * ('txn_<dynamic_id>up' / 'txn_<dynamic_id>-1') so a run that dies before teardown cannot poison
+ * later runs under the UNIQUE passes_txn_id index. TC-005/TC-006 keep their exact boundary values
+ * ('abc' / 'ab') and therefore DELETE any leftover row with that txn_id before inserting.
  */
 const RECONCILIATION_TOKEN = "qa-reconciliation-token";
 
@@ -48,15 +53,17 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
     expect(await res.json()).toEqual({ detail: "pass not found" });
   });
 
-  test("TC-004 long stored txn_id 'shared-txn-dup' is masked to '****up'", async ({ api, db, dynamicId }) => {
+  test("TC-004 long stored txn_id 'txn_<dynamic_id>up' is masked to '****up'", async ({ api, db, dynamicId }) => {
+    const txnId = `txn_${dynamicId}up`;
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
-        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, 'shared-txn-dup', 'ACTIVE')`,
+        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, '${txnId}', 'ACTIVE')`,
     );
     try {
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
-      expect(await res.json()).toEqual({
+      const body = await res.json();
+      expect(body).toEqual({
         id: dynamicId,
         vehicle: "car",
         months: 3,
@@ -66,6 +73,8 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
         txn_id: "****up",
         status: "ACTIVE",
       });
+      // The SEC-ONODE-29-1 replay value is never returned clear.
+      expect(JSON.stringify(body)).not.toContain(txnId);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
     } finally {
@@ -74,6 +83,9 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   });
 
   test("TC-005 3-char stored txn_id 'abc' is masked to '****bc'", async ({ api, db, dynamicId }) => {
+    // The value must be EXACTLY 'abc' (masking length boundary): clear any leftover row from a
+    // dead run before inserting, so the UNIQUE passes_txn_id index cannot reject the seed.
+    await db.exec(`DELETE FROM passes WHERE txn_id = 'abc';`);
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
         `VALUES (${dynamicId}, 'car', 1, 'ZZ7777', 500, 'abc', 'ACTIVE')`,
@@ -99,6 +111,9 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   });
 
   test("TC-006 2-char stored txn_id 'ab' is returned unchanged (length <= 2 is not masked)", async ({ api, db, dynamicId }) => {
+    // The value must be EXACTLY 'ab' (masking length boundary): clear any leftover row from a
+    // dead run before inserting, so the UNIQUE passes_txn_id index cannot reject the seed.
+    await db.exec(`DELETE FROM passes WHERE txn_id = 'ab';`);
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
         `VALUES (${dynamicId}, 'motorcycle', 2, 'MM999', 1200, 'ab', 'ACTIVE')`,
@@ -123,15 +138,17 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
     }
   });
 
-  test("TC-007 every non-txn_id field is unchanged while txn_id 'TXN-1' is masked to '****-1'", async ({ api, db, dynamicId }) => {
+  test("TC-007 every non-txn_id field is unchanged while txn_id 'txn_<dynamic_id>-1' is masked to '****-1'", async ({ api, db, dynamicId }) => {
+    const txnId = `txn_${dynamicId}-1`;
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
-        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, 'TXN-1', 'ACTIVE')`,
+        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, '${txnId}', 'ACTIVE')`,
     );
     try {
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
-      expect(await res.json()).toEqual({
+      const body = await res.json();
+      expect(body).toEqual({
         id: dynamicId,
         vehicle: "car",
         months: 3,
@@ -141,6 +158,7 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
         txn_id: "****-1",
         status: "ACTIVE",
       });
+      expect(JSON.stringify(body)).not.toContain(txnId);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
     } finally {
@@ -149,18 +167,23 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   });
 
   test("TC-008 the same pass read twice returns the SAME masked txn_id '****up' both times", async ({ api, db, dynamicId }) => {
+    const txnId = `txn_${dynamicId}up`;
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
-        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, 'shared-txn-dup', 'ACTIVE')`,
+        `VALUES (${dynamicId}, 'car', 3, 'ABC123', 4500, '${txnId}', 'ACTIVE')`,
     );
     try {
       const first = await api.get(`/passes/${dynamicId}`);
       expect(first.status()).toBe(200);
-      expect(await first.json()).toMatchObject({ txn_id: "****up" });
+      const firstBody = await first.json();
+      expect(firstBody).toMatchObject({ txn_id: "****up" });
+      expect(JSON.stringify(firstBody)).not.toContain(txnId);
 
       const second = await api.get(`/passes/${dynamicId}`);
       expect(second.status()).toBe(200);
-      expect(await second.json()).toMatchObject({ txn_id: "****up" });
+      const secondBody = await second.json();
+      expect(secondBody).toMatchObject({ txn_id: "****up" });
+      expect(JSON.stringify(secondBody)).not.toContain(txnId);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
     } finally {
@@ -174,11 +197,13 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   // this single read is not refused by a shared process-wide bucket; the 200 body is unchanged and
   // the masking assertions below are untouched.
   // AMENDED by ONODE-42 B1: the reconciliation call carries X-Reconciliation-Token.
+  // AMENDED by ONODE-48: the seed uses a per-row dynamic txn_id ('txn_<dynamic_id>up').
   test("TC-009 GET /passes/reconciliation and GET /passes/{id} both return '****up', never the clear value", async ({ api, db, dynamicId }) => {
     const plate = `R${dynamicId}`.slice(0, 10);
+    const txnId = `txn_${dynamicId}up`;
     await db.exec(
       `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) ` +
-        `VALUES (${dynamicId}, 'car', 3, '${plate}', 4500, 'shared-txn-dup', 'ACTIVE')`,
+        `VALUES (${dynamicId}, 'car', 3, '${plate}', 4500, '${txnId}', 'ACTIVE')`,
     );
     try {
       // Reconciliation lists a pass with no successful payment attempt under `suspicious`,
@@ -193,7 +218,7 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
       );
       expect(suspicious).toHaveLength(1);
       expect(suspicious[0]).toMatchObject({ plate, txn_id: "****up" });
-      expect(suspicious[0].txn_id).not.toBe("shared-txn-dup");
+      expect(suspicious[0].txn_id).not.toBe(txnId);
 
       // The by-id read is rate-limited by source IP (ONODE-35 B6) — a single read is admitted and
       // the masking contract is unchanged.
@@ -201,7 +226,7 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
       expect(byId.status()).toBe(200);
       const byIdBody = await byId.json();
       expect(byIdBody).toMatchObject({ txn_id: "****up" });
-      expect(byIdBody.txn_id).not.toBe("shared-txn-dup");
+      expect(byIdBody.txn_id).not.toBe(txnId);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
     } finally {
