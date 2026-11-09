@@ -9,13 +9,11 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * currency, txn_id, status). The gateway stub is scoped to this test's X-Request-Id, so the app's own
  * call to POST /charge is the only one it answers.
  *
- * FINDING (CSV, TC-015) — TEST-DESIGN DEFECT, CSV MUST BE CORRECTED: the row states `price: 500` for
- * car / 1 month. The deployed pricing rule is car base 1500 THB/month with no discount at 1 month —
- * proven by the delivered, green-on-main ONODE-12 TC-003/TC-018/TC-020/TC-021/TC-023 and ONODE-15
- * TC-013 (car 3 months = 4500) suites. The app is right and the CSV expectation is wrong. The row
- * asserts the app's actual 1500 and records the CSV's 500 as the defect; the CSV should be corrected
- * to 1500. The expectation is not silently edited — the divergence is named in the test body and
- * disputed back to the test design so it is fixed at its source.
+ * NOTE (TC-015): an earlier revision of the CSV stated `price: 500` for car / 1 month, which
+ * contradicted the deployed pricing rule (car base 1500 THB/month, no discount at 1 month — proven by
+ * the delivered, green-on-main ONODE-12 TC-003/TC-018/TC-020/TC-021/TC-023 and ONODE-15 TC-013
+ * suites). That row was disputed back to the test design and the CSV has since been corrected to
+ * `price: 1500`, which is what this suite asserts.
  */
 test.describe("ONODE-23 — POST /passes txn_id idempotency", () => {
   // ---------------------------------------------------------------------------
@@ -311,15 +309,7 @@ test.describe("ONODE-23 — POST /passes txn_id idempotency", () => {
       expect(res.status()).toBe(201);
       const body = await res.json();
 
-      // FINDING (CSV, TC-015): the CSV states price 500 for car/1 month. The deployed rule is 1500
-      // (car base 1500/month, no discount at 1 month — proven by the delivered ONODE-12/ONODE-15
-      // suites, green on main). The CSV expectation is wrong and must be corrected to 1500; the
-      // divergence is recorded here and disputed back to the test design rather than silently absorbed.
-      expect(
-        body.price,
-        "CSV TC-015 states price 500 for car/1 month — the CSV is wrong (deployed rule: 1500); correct the test design",
-      ).toBe(1500);
-
+      // CSV TC-015 (corrected): car / 1 month = 1500 THB — car base 1500/month, no discount at 1 month.
       expect(body).toMatchObject({
         vehicle: "car",
         months: 1,
