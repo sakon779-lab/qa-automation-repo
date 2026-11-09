@@ -19,7 +19,13 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * ignored). The app is built with an injected per-client limiter (max 30) and global limiter
  * (max 300) on a fixed clock, so this single read is not refused by a shared process-wide bucket
  * and the 200 body is unchanged — the masking assertions are untouched.
+ *
+ * AMENDED by ONODE-42 B1 (TC-009): GET /passes/reconciliation now requires the
+ * `X-Reconciliation-Token` header equal to RECONCILIATION_TOKEN; without it the endpoint answers
+ * 401. TC-009 therefore sends the token on its reconciliation call.
  */
+const RECONCILIATION_TOKEN = "qa-reconciliation-token";
+
 test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   test("TC-001 non-numeric id 'abc' → 404 'pass not found' (validated before any DB query)", async ({ api }) => {
     const res = await api.get("/passes/abc");
@@ -167,6 +173,7 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   // with an injected per-client limiter (max 30) and global limiter (max 300) on a fixed clock, so
   // this single read is not refused by a shared process-wide bucket; the 200 body is unchanged and
   // the masking assertions below are untouched.
+  // AMENDED by ONODE-42 B1: the reconciliation call carries X-Reconciliation-Token.
   test("TC-009 GET /passes/reconciliation and GET /passes/{id} both return '****up', never the clear value", async ({ api, db, dynamicId }) => {
     const plate = `R${dynamicId}`.slice(0, 10);
     await db.exec(
@@ -176,7 +183,9 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
     try {
       // Reconciliation lists a pass with no successful payment attempt under `suspicious`,
       // keyed by plate, with its txn_id masked (ONODE-29 B7/B15).
-      const reconciliation = await api.get("/passes/reconciliation");
+      const reconciliation = await api.get("/passes/reconciliation", {
+        headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+      });
       expect(reconciliation.status()).toBe(200);
       const reconciliationBody = await reconciliation.json();
       const suspicious = (reconciliationBody.suspicious as Array<Record<string, unknown>>).filter(

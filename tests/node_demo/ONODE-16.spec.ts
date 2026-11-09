@@ -14,6 +14,10 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * row filters the suspicious list down to its OWN plate — never a global count (ONODE-16
  * requirement: "ห้ามเทียบจำนวนรวม").
  *
+ * AMENDED by ONODE-42 B1: GET /passes/reconciliation now requires the `X-Reconciliation-Token`
+ * header equal to RECONCILIATION_TOKEN; without it the endpoint answers 401. TC-012, TC-014,
+ * TC-015, TC-016 and TC-017 therefore send the token on their reconciliation call.
+ *
  * FINDING (CSV, TC-015): the row seeds a passes row with txn_id = '' to exercise the
  * reconciliation "blank txn_id" branch. The deployed schema forbids that state — the
  * passes_txn_id_not_blank CHECK rejects any blank txn_id (proven by the delivered ONODE-12
@@ -22,6 +26,8 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * having its expectation edited to match the app; the test below proves the seed is refused BY
  * NAME and that reconciliation still honours its contract.
  */
+const RECONCILIATION_TOKEN = "qa-reconciliation-token";
+
 test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   // ---------------------------------------------------------------------------
   // TC-001 — SUCCESS charge appends one payment_attempts row, trims plate, stores txn_id
@@ -312,6 +318,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
 
   // ---------------------------------------------------------------------------
   // TC-012 — clean pass (matching SUCCESS attempt) is NOT listed as suspicious
+  // AMENDED by ONODE-42 B1: the request carries X-Reconciliation-Token.
   // ---------------------------------------------------------------------------
   test("TC-012 reconciliation does not list a clean ACTIVE pass with a matching SUCCESS attempt", async ({
     api,
@@ -328,7 +335,9 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
         `INSERT INTO payment_attempts (reference, amount, outcome, txn_id) VALUES ('${plate}', 1500, 'SUCCESS', '${txnId}')`,
       );
 
-      const res = await api.get("/passes/reconciliation");
+      const res = await api.get("/passes/reconciliation", {
+        headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+      });
 
       expect(res.status()).toBe(200);
       const body = await res.json();
@@ -352,6 +361,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
 
   // ---------------------------------------------------------------------------
   // TC-014 — ACTIVE pass with non-blank txn_id and no SUCCESS attempt → 'no successful payment attempt'
+  // AMENDED by ONODE-29 B7 (masked txn_id) and by ONODE-42 B1 (token header).
   // ---------------------------------------------------------------------------
   test("TC-014 reconciliation lists an ACTIVE pass with no successful payment attempt", async ({
     api,
@@ -368,7 +378,9 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
         `INSERT INTO payment_attempts (reference, amount, outcome, txn_id) VALUES ('${plate}', 1500, 'DECLINED', NULL)`,
       );
 
-      const res = await api.get("/passes/reconciliation");
+      const res = await api.get("/passes/reconciliation", {
+        headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+      });
 
       expect(res.status()).toBe(200);
       const body = await res.json();
@@ -392,6 +404,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   // TC-015 — CSV seeds a non-ACTIVE (EXPIRED) pass with a blank txn_id. The schema forbids the
   // blank txn_id regardless of status (see FINDING). Prove the seed is refused BY NAME and that
   // reconciliation still answers 200 with its contract keys.
+  // AMENDED by ONODE-42 B1: the request carries X-Reconciliation-Token.
   // ---------------------------------------------------------------------------
   test("TC-015 reconciliation ignores a non-ACTIVE pass: the blank-txn_id seed is refused by passes_txn_id_not_blank", async ({
     api,
@@ -406,7 +419,9 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
         ),
       ).rejects.toThrow(/passes_txn_id_not_blank/);
 
-      const res = await api.get("/passes/reconciliation");
+      const res = await api.get("/passes/reconciliation", {
+        headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+      });
       expect(res.status()).toBe(200);
       const body = await res.json();
       expect(body).toHaveProperty("checked");
@@ -425,6 +440,7 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   // blank-txn_id seed is refused by the schema (see FINDING); the ordering of the reachable
   // "no successful payment attempt" branch is proven with two such passes seeded in reverse id
   // order, which exercises the same ORDER BY pass_id ASC.
+  // AMENDED by ONODE-29 B7 (masked txn_ids) and by ONODE-42 B1 (token header).
   // ---------------------------------------------------------------------------
   test("TC-016 reconciliation orders the suspicious list by pass_id ascending", async ({ api, db, dynamicId }) => {
     const plateP = `P${dynamicId}`.slice(0, 10);
@@ -442,7 +458,9 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
         `INSERT INTO passes (id, vehicle, months, plate, price, txn_id, status) VALUES (${idLow}, 'car', 1, '${plateP}', 1500, '${txnIdA}', 'ACTIVE')`,
       );
 
-      const res = await api.get("/passes/reconciliation");
+      const res = await api.get("/passes/reconciliation", {
+        headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+      });
 
       expect(res.status()).toBe(200);
       const body = await res.json();
@@ -475,9 +493,12 @@ test.describe("ONODE-16 — passes purchase & reconciliation", () => {
   // TC-017 — REWRITTEN by ONODE-40: reconciliation is a pure read taking no body and no query
   // parameters. The database is shared and parallel, so NO global count is asserted — only the
   // response SHAPE: 200, `checked` is a number, `suspicious` is a list.
+  // AMENDED by ONODE-42 B1: the request carries X-Reconciliation-Token.
   // ---------------------------------------------------------------------------
   test("TC-017 reconciliation is a pure read returning a numeric checked and a suspicious list", async ({ api }) => {
-    const res = await api.get("/passes/reconciliation");
+    const res = await api.get("/passes/reconciliation", {
+      headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+    });
 
     expect(res.status()).toBe(200);
     const body = await res.json();
