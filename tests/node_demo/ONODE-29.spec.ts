@@ -14,7 +14,13 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the app forwards), the
  * DB is read back through `db`, and each test cleans up only its own rows in a finally block so
  * the fully-parallel suite never collides.
+ *
+ * AMENDED by ONODE-42 B1: GET /passes/reconciliation now requires the `X-Reconciliation-Token`
+ * header equal to RECONCILIATION_TOKEN; without it the endpoint answers 401. TC-024 and TC-026
+ * therefore send the token on their reconciliation call.
  */
+const RECONCILIATION_TOKEN = "qa-reconciliation-token";
+
 test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation masking", () => {
   // TC-001 — B3: replaying the SAME txn_id with an identical request returns 200, one row
   test("TC-001 replaying the same txn_id with an identical request returns 200 and writes no second row", async ({
@@ -543,6 +549,7 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
   });
 
   // TC-024 — B7: reconciliation masks a stored txn_id as a FIXED '****' + the LAST 2 characters
+  // AMENDED by ONODE-42 B1: the request carries X-Reconciliation-Token.
   test("TC-024 reconciliation masks a suspicious txn_id as '****' plus its last 2 characters", async ({
     api,
     db,
@@ -555,7 +562,9 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
         `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plate}', 1500, '${txnId}', 'ACTIVE')`,
       );
 
-      const res = await api.get("/passes/reconciliation");
+      const res = await api.get("/passes/reconciliation", {
+        headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+      });
       expect(res.status()).toBe(200);
       const body = await res.json();
       const suspicious = (body.suspicious as Array<Record<string, unknown>>).filter((s) => s.plate === plate);
@@ -614,6 +623,7 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
   });
 
   // TC-026 — B7: a longer stored txn_id is masked as a FIXED '****' + the LAST 2 characters
+  // AMENDED by ONODE-42 B1: the request carries X-Reconciliation-Token.
   test("TC-026 reconciliation masks a longer suspicious txn_id as '****' plus its last 2 characters", async ({
     api,
     db,
@@ -626,7 +636,9 @@ test.describe("ONODE-29 — txn_id binding on POST /passes and reconciliation ma
         `INSERT INTO passes (vehicle, months, plate, price, txn_id, status) VALUES ('car', 1, '${plate}', 1500, '${txnId}', 'ACTIVE')`,
       );
 
-      const res = await api.get("/passes/reconciliation");
+      const res = await api.get("/passes/reconciliation", {
+        headers: { "X-Reconciliation-Token": RECONCILIATION_TOKEN },
+      });
       expect(res.status()).toBe(200);
       const body = await res.json();
       const suspicious = (body.suspicious as Array<Record<string, unknown>>).filter((s) => s.plate === plate);
