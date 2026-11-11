@@ -33,7 +33,7 @@ pipeline {
         NEO4J_PASSWORD = credentials('neo4j-password')
         DB_HOST = 'host.docker.internal'
         DB_PORT = '5432'
-        DB_NAME = 'payment_poc'
+        DB_NAME = 'olympus'
         DB_USER = 'postgres'
         DB_PASSWORD = credentials('olympus-db-password')
         OLLAMA_LOCAL_URL = 'http://host.docker.internal:11434'
