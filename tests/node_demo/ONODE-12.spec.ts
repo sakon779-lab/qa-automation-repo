@@ -21,6 +21,10 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * ('txn_<dynamic_id>'), never a constant. Since ONODE-23 the txn_id column is UNIQUE, so a
  * constant mocked id collides with any parallel test that mocks the same value (the second
  * gets 409). Every value the system stores is the test's own data.
+ *
+ * AMENDED by ONODE-60 B1/B2 (TC-004): the gateway txn_id is normalized to its canonical form
+ * (trimmed) once at the boundary and the canonical value is stored and echoed — the ONODE-29
+ * wording 'stored and echoed exactly as received (NOT trimmed)' is superseded.
  */
 test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id", () => {
   // TC-001 — gateway SUCCESS with txn_id '' → 502, no row (the SEC-ONODE-8-1 replay)
@@ -84,12 +88,19 @@ test.describe("ONODE-12 — reject a SUCCESS charge with an empty/invalid txn_id
     }
   });
 
-  // TC-004 — txn_id stored exactly as received (whitespace preserved), plate trimmed
-  test("TC-004 stores txn_id exactly as received while trimming the plate", async ({ api, db, mock, dynamicId }) => {
+  // TC-004 — AMENDED by ONODE-60 B1/B2: the gateway txn_id is trimmed to its canonical form at
+  // the boundary, so the stored/echoed value is 'txn_<dynamic_id>' (NOT ' txn_<dynamic_id> '),
+  // while the plate is still trimmed. motorcycle 12 months -> price 5760.
+  test("TC-004 stores and echoes the canonical (trimmed) txn_id while trimming the plate", async ({
+    api,
+    db,
+    mock,
+    dynamicId,
+  }) => {
     const plate = `P${dynamicId}`;
-    const txnId = ` txn_${dynamicId} `;
+    const txnId = `txn_${dynamicId}`;
     try {
-      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
+      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: ` ${txnId} ` });
 
       const res = await api.post("/passes", {
         data: { vehicle: "motorcycle", months: 12, plate: `  ${plate}  ` },
