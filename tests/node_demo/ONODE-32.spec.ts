@@ -28,8 +28,14 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * ('txn_<dynamic_id>up' / 'txn_<dynamic_id>-1') so a run that dies before teardown cannot poison
  * later runs under the UNIQUE passes_txn_id index. TC-005/TC-006 keep their exact boundary values
  * ('abc' / 'ab') and therefore DELETE any leftover row with that txn_id before inserting.
+ *
+ * AMENDED by ONODE-58 (TC-004/TC-005/TC-006/TC-007): the by-id read now also returns
+ * `expires_at`, computed on read from created_at + months (ISO-8601 UTC). The rows' field lists
+ * are asserted with toMatchObject and the new field is checked for presence and shape, so the
+ * masking contract is unchanged.
  */
 const RECONCILIATION_TOKEN = "qa-reconciliation-token";
+const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
   test("TC-001 non-numeric id 'abc' → 404 'pass not found' (validated before any DB query)", async ({ api }) => {
@@ -63,7 +69,7 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
       const body = await res.json();
-      expect(body).toEqual({
+      expect(body).toMatchObject({
         id: dynamicId,
         vehicle: "car",
         months: 3,
@@ -73,6 +79,9 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
         txn_id: "****up",
         status: "ACTIVE",
       });
+      // ONODE-58: the read also reports expires_at, computed on read (never stored).
+      expect(typeof body.expires_at).toBe("string");
+      expect(body.expires_at).toMatch(ISO_UTC);
       // The SEC-ONODE-29-1 replay value is never returned clear.
       expect(JSON.stringify(body)).not.toContain(txnId);
 
@@ -93,7 +102,8 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
     try {
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
-      expect(await res.json()).toEqual({
+      const body = await res.json();
+      expect(body).toMatchObject({
         id: dynamicId,
         vehicle: "car",
         months: 1,
@@ -103,6 +113,9 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
         txn_id: "****bc",
         status: "ACTIVE",
       });
+      // ONODE-58: the read also reports expires_at, computed on read (never stored).
+      expect(typeof body.expires_at).toBe("string");
+      expect(body.expires_at).toMatch(ISO_UTC);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
     } finally {
@@ -121,7 +134,8 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
     try {
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
-      expect(await res.json()).toEqual({
+      const body = await res.json();
+      expect(body).toMatchObject({
         id: dynamicId,
         vehicle: "motorcycle",
         months: 2,
@@ -131,6 +145,9 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
         txn_id: "ab",
         status: "ACTIVE",
       });
+      // ONODE-58: the read also reports expires_at, computed on read (never stored).
+      expect(typeof body.expires_at).toBe("string");
+      expect(body.expires_at).toMatch(ISO_UTC);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);
     } finally {
@@ -148,7 +165,7 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
       const body = await res.json();
-      expect(body).toEqual({
+      expect(body).toMatchObject({
         id: dynamicId,
         vehicle: "car",
         months: 3,
@@ -158,6 +175,9 @@ test.describe("ONODE-32 — GET /passes/{id} masks txn_id", () => {
         txn_id: "****-1",
         status: "ACTIVE",
       });
+      // ONODE-58: the read also reports expires_at, computed on read (never stored).
+      expect(typeof body.expires_at).toBe("string");
+      expect(body.expires_at).toMatch(ISO_UTC);
       expect(JSON.stringify(body)).not.toContain(txnId);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE id = ${dynamicId}`)).toBe(1);

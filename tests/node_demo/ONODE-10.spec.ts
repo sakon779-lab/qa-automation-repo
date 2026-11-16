@@ -15,7 +15,12 @@ import { test, expect } from "../../resources/playwright/fixtures";
  *
  * AMENDED by ONODE-48 (TC-006): the seed uses a per-row dynamic txn_id ('txn_<dynamic_id>_1') so
  * a run that dies before teardown cannot poison later runs under the UNIQUE passes_txn_id index.
+ *
+ * AMENDED by ONODE-58 (TC-006): the by-id read now also returns `expires_at`, computed on read
+ * from created_at + months (ISO-8601 UTC). The row's field list is asserted with toMatchObject
+ * and the new field is checked for presence and shape, so the ONODE-10 contract is unchanged.
  */
+const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () => {
   test("TC-001 non-numeric id 'abc' → 404 'pass not found' (validated before any DB query)", async ({ api }) => {
@@ -58,7 +63,7 @@ test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () =>
       const res = await api.get(`/passes/${dynamicId}`);
       expect(res.status()).toBe(200);
       const body = await res.json();
-      expect(body).toEqual({
+      expect(body).toMatchObject({
         id: dynamicId,
         vehicle: "car",
         months: 3,
@@ -68,6 +73,9 @@ test.describe("ONODE-10 — GET /passes/{id} id validation and read-back", () =>
         txn_id: "****_1",
         status: "ACTIVE",
       });
+      // ONODE-58: the read also reports expires_at, computed on read (never stored).
+      expect(typeof body.expires_at).toBe("string");
+      expect(body.expires_at).toMatch(ISO_UTC);
       // The clear stored value MUST NOT appear anywhere in the response body.
       expect(JSON.stringify(body)).not.toContain(txnId);
 
