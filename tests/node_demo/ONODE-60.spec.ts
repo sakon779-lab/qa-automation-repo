@@ -16,6 +16,12 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * ONODE-64 retired TC-016 (the "database throws → 500" row): it proved a fault-only error by
  * renaming the shared `passes` table, which made every parallel test touching `passes` fail at
  * random. That obligation is proven at the unit layer by this card's own unit tests.
+ *
+ * AMENDED by ONODE-61 (TC-020): the seeded pass is looked up by its canonical txn_id regardless
+ * of which JSON media type carried the body — application/*+json is now parsed too. The table is
+ * shared and the suite is fully parallel, so the purity assertion is made on THIS test's own
+ * suspicious entry and on the list's stability, never on the global `checked` count (another
+ * test's insert between the two calls would move it — ONODE-16's "ห้ามเทียบจำนวนรวม" rule).
  */
 test.describe("ONODE-60 — canonical (trimmed) gateway txn_id as the idempotency key", () => {
   // TC-001 — E1/B4/X2: 'txn-<id>' then ' txn-<id> ' with a DIFFERENT plate -> 409, one row
@@ -344,7 +350,12 @@ test.describe("ONODE-60 — gateway outcomes, framework guards and DB backstops"
   });
 
   // TC-020 — B13: reconcile() is a pure function of its two list arguments — two consecutive
-  // calls with no DB change return the same checked count and suspicious list
+  // calls with no DB change return the same suspicious list, and the seeded pass is still listed
+  // with the same reason. AMENDED by ONODE-61: the seeded pass is looked up by its canonical
+  // txn_id regardless of which JSON media type carried the body (application/*+json is now
+  // parsed too). The table is shared and the suite is fully parallel, so the global `checked`
+  // count is NOT compared across the two calls (another test's insert would move it); purity is
+  // asserted on THIS test's own entry and on the stability of the list it appears in.
   test("TC-020 reconciliation is pure across two consecutive calls", async ({ api, db, dynamicId }) => {
     const plate = `R${dynamicId}`;
     const txnId = `txn-pure-${dynamicId}`;
@@ -371,8 +382,14 @@ test.describe("ONODE-60 — gateway outcomes, framework guards and DB backstops"
       });
       expect(second.status()).toBe(200);
       const secondBody = await second.json();
-      expect(secondBody.checked).toBe(firstBody.checked);
-      expect(secondBody.suspicious).toEqual(firstBody.suspicious);
+      expect(typeof secondBody.checked).toBe("number");
+      expect(Array.isArray(secondBody.suspicious)).toBe(true);
+
+      // Purity: THIS test's own entry is identical in both calls (same plate, same reason).
+      const ownFirst = (firstBody.suspicious as Array<Record<string, unknown>>).filter((s) => s.plate === plate);
+      const ownSecond = (secondBody.suspicious as Array<Record<string, unknown>>).filter((s) => s.plate === plate);
+      expect(ownFirst).toHaveLength(1);
+      expect(ownSecond).toEqual(ownFirst);
 
       expect(await db.value(`SELECT count(*) FROM passes WHERE txn_id = '${txnId}'`)).toBe(1);
     } finally {
