@@ -1,21 +1,20 @@
 import { test, expect } from "../../resources/playwright/fixtures";
 
 /**
- * ONODE-60 — SEC-ONODE-29-3: normalize the gateway txn_id before it becomes an idempotency key.
- *
- * The gateway's txn_id is trimmed ONCE at the boundary (B1), the canonical value is stored and
- * echoed (B2), the lookup runs on the canonical value (B3), and the ONODE-29 four-field binding
- * is applied to that canonical key (B4). The DB unique index on the stored column is the last
- * line of defence (B6), reconciliation compares on the canonical form (B8), and the audit row for
- * a 409 carries the canonical txn_id (B10).
+ * ONODE-60 — SEC-ONODE-29-3: the gateway txn_id is normalized to its canonical form (trimmed)
+ * ONCE at the boundary, before it is used as an idempotency key, stored, echoed or audited.
  *
  * Every row of test_designs/ONODE-60.csv becomes one test. The gateway is stubbed through
- * `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the app forwards), the DB
- * is read back through `db`, and each test cleans up its own rows in a finally block so the
+ * `mock.arm` (scoped to this test's X-Request-Id, which `api` sends and the app forwards), the
+ * DB is read back through `db`, and each test cleans up its own rows in a finally block so the
  * fully-parallel suite never collides.
+ *
+ * The two-call rows arm the stub twice: MockServer answers the FIRST matching request with the
+ * first expectation and the second request with the second one (expectations are consumed in
+ * order), so the whitespace-variant replay is exercised exactly as the finding describes.
  */
-test.describe("ONODE-60 — canonical txn_id: trim at the boundary, store and reconcile the canonical value", () => {
-  // TC-001 — E1/B4/X2: whitespace-variant txn_id with a DIFFERENT plate → 409, exactly one row
+test.describe("ONODE-60 — canonical (trimmed) gateway txn_id as the idempotency key", () => {
+  // TC-001 — E1/B4/X2: 'txn-<id>' then ' txn-<id> ' with a DIFFERENT plate -> 409, one row
   test("TC-001 a whitespace-variant txn_id with a different plate answers 409 and writes one row", async ({
     api,
     db,
@@ -133,7 +132,7 @@ test.describe("ONODE-60 — canonical txn_id: trim at the boundary, store and re
     }
   });
 
-  // TC-005 — E4: vehicle is a non-string JSON value → 400, no row
+  // TC-005 — E4: vehicle is a non-string JSON value (number 1) → 400, no row
   test("TC-005 returns 400 when vehicle is a non-string value", async ({ api, db, dynamicId }) => {
     const plate = `P${dynamicId}`;
     try {
@@ -175,14 +174,14 @@ test.describe("ONODE-60 — canonical txn_id: trim at the boundary, store and re
     }
   });
 
-  // TC-008 — E7: whitespace-only plate → 400, no row
+  // TC-008 — E7: whitespace-only plate → 400
   test("TC-008 returns 400 when the plate is whitespace-only", async ({ api }) => {
     const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: "   " } });
     expect(res.status()).toBe(400);
     expect(await res.json()).toMatchObject({ detail: "plate is required" });
   });
 
-  // TC-009 — E8: trimmed plate longer than 10 chars → 400, no row
+  // TC-009 — E8: trimmed plate longer than 10 characters → 400
   test("TC-009 returns 400 when the trimmed plate is longer than 10 characters", async ({ api }) => {
     const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate: "ABCDEFGHIJK" } });
     expect(res.status()).toBe(400);
@@ -240,7 +239,7 @@ test.describe("ONODE-60 — gateway outcomes, framework guards and DB backstops"
     }
   });
 
-  // TC-013 — E14: a body that is not valid JSON → 400 (framework rejects before the route runs)
+  // TC-013 — E14: a body that is not valid JSON → 400 'request body must be valid JSON'
   test("TC-013 returns 400 when the request body is not valid JSON", async ({ api }) => {
     const res = await api.post("/passes", {
       headers: { "Content-Type": "application/json" },
@@ -250,7 +249,7 @@ test.describe("ONODE-60 — gateway outcomes, framework guards and DB backstops"
     expect(await res.json()).toMatchObject({ detail: "request body must be valid JSON" });
   });
 
-  // TC-014 — E15: Content-Type application/xml → 415 (framework rejects before the route runs)
+  // TC-014 — E15: Content-Type application/xml → 415 'unsupported content type'
   test("TC-014 returns 415 for an unsupported content type", async ({ api }) => {
     const res = await api.post("/passes", {
       headers: { "Content-Type": "application/xml" },
@@ -305,7 +304,7 @@ test.describe("ONODE-60 — gateway outcomes, framework guards and DB backstops"
     expect(body).not.toHaveProperty("suspicious");
   });
 
-  // TC-018 — B6: the passes_txn_id_unique constraint refuses a second row with the same txn_id
+  // TC-018 — B6: the passes_txn_id_unique constraint refuses a duplicate canonical txn_id
   test("TC-018 the passes_txn_id_unique constraint refuses a duplicate canonical txn_id", async ({ db, dynamicId }) => {
     const txnId = `txn-uniq-${dynamicId}`;
     try {
@@ -427,9 +426,8 @@ test.describe("ONODE-60 — gateway outcomes, framework guards and DB backstops"
     }
   });
 
-  // TC-022 — E1/B4: the four-field binding fires on the CANONICAL key — a padded txn_id with a
-  // DIFFERENT plate answers 409, writes exactly one MISMATCH audit row carrying the canonical
-  // txn_id, and no second passes row
+  // TC-022 — E1/B4: the four-field binding fires on the CANONICAL key — a 409 writes exactly one
+  // payment_attempts MISMATCH row carrying the canonical txn_id and no second passes row
   test("TC-022 the four-field binding fires on the canonical key and audits one MISMATCH row", async ({
     api,
     db,
