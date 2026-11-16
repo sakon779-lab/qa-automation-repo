@@ -12,6 +12,10 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * The two-call rows arm the stub twice: MockServer answers the FIRST matching request with the
  * first expectation and the second request with the second one (expectations are consumed in
  * order), so the whitespace-variant replay is exercised exactly as the finding describes.
+ *
+ * ONODE-64 retired TC-016 (the "database throws → 500" row): it proved a fault-only error by
+ * renaming the shared `passes` table, which made every parallel test touching `passes` fail at
+ * random. That obligation is proven at the unit layer by this card's own unit tests.
  */
 test.describe("ONODE-60 — canonical (trimmed) gateway txn_id as the idempotency key", () => {
   // TC-001 — E1/B4/X2: 'txn-<id>' then ' txn-<id> ' with a DIFFERENT plate -> 409, one row
@@ -268,28 +272,6 @@ test.describe("ONODE-60 — gateway outcomes, framework guards and DB backstops"
     });
     expect(res.status()).toBe(413);
     expect(await res.json()).toMatchObject({ detail: "request body too large" });
-  });
-
-  // TC-016 — E17: a genuine server-side fault inside the route → 500 'internal error'
-  test("TC-016 answers 500 internal error when the database throws inside the route", async ({
-    api,
-    db,
-    mock,
-    dynamicId,
-  }) => {
-    const plate = `P${dynamicId}`;
-    const txnId = `txn-fault-${dynamicId}`;
-    const faultTable = `passes_fault_${dynamicId}`;
-    try {
-      await mock.arm("POST", "/charge", 200, { status: "SUCCESS", txn_id: txnId });
-      await db.exec(`ALTER TABLE passes RENAME TO ${faultTable}`);
-
-      const res = await api.post("/passes", { data: { vehicle: "car", months: 1, plate } });
-      expect(res.status()).toBe(500);
-      expect(await res.json()).toMatchObject({ detail: "internal error" });
-    } finally {
-      await db.exec(`ALTER TABLE ${faultTable} RENAME TO passes`);
-    }
   });
 
   // TC-017 — E19: a wrong reconciliation token → 401 and discloses nothing

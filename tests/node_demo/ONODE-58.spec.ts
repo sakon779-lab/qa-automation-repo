@@ -13,10 +13,9 @@ import { test, expect } from "../../resources/playwright/fixtures";
  * The ISO-8601 UTC pattern the CSV names is asserted with a regex; "strictly later/earlier than
  * now" is asserted against the clock read inside the test.
  *
- * TC-009 is DISPUTED (see dispute_test_row): its PreRequisite asks for the passes table to be
- * unavailable, which on this shared QA database can only be done with a global DDL/DCL change
- * that breaks the parallel suite. The test states the row's expectation verbatim and stays red
- * until Athena corrects the row.
+ * ONODE-64 retired TC-009 (the "passes table unavailable → 500" row): it proved a fault-only
+ * error by renaming the shared `passes` table, which made every parallel test touching `passes`
+ * fail at random. That obligation is proven at the unit layer by this card's own unit tests.
  */
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
@@ -149,24 +148,6 @@ test.describe("ONODE-58 — GET /passes/{id} expires_at and EXPIRED status", () 
     const res = await api.get(`/passes/${missingId}`);
     expect(res.status()).toBe(404);
     expect(await res.json()).toEqual({ detail: "pass not found" });
-  });
-
-  test("TC-009 a database error during the read → 500 'internal error' with no stack trace or SQL leaked", async ({ api, db, dynamicId }) => {
-    // DISPUTED: the row's PreRequisite ("the passes table is unavailable") can only be produced
-    // on this shared QA database by a global DDL/DCL change, which breaks the fully-parallel
-    // suite (it did: a parallel test failed with 'relation "passes" does not exist'). The test
-    // states the row's expectation verbatim and stays red until Athena corrects the row.
-    await db.exec(`ALTER TABLE passes RENAME TO passes_unavailable_${dynamicId};`);
-    try {
-      const res = await api.get(`/passes/${dynamicId}`);
-      expect(res.status()).toBe(500);
-      const body = await res.json();
-      expect(body).toEqual({ detail: "internal error" });
-      const raw = JSON.stringify(body);
-      expect(raw).not.toMatch(/Traceback|psycopg|sqlalchemy|SELECT |INSERT |relation "passes"/i);
-    } finally {
-      await db.exec(`ALTER TABLE passes_unavailable_${dynamicId} RENAME TO passes;`);
-    }
   });
 
   test("TC-010 the 404 'pass not found' answer is unchanged for a valid in-range id with no row", async ({ api, dynamicId }) => {
