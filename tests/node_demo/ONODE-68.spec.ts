@@ -1,15 +1,13 @@
 import { test, expect } from "../../resources/playwright/fixtures";
 
 /**
- * ONODE-68 — the app-instance not-found handler: every unmatched route answers the fixed
- * constant body { detail: 'Not Found' } with Content-Type application/json, never the
- * framework default serializer, never caller-controlled path text, and never intercepting a
- * registered route or a route-owned 404.
+ * ONODE-68 — the app-instance not-found / bad-request handlers answer a fixed constant body
+ * ({'detail': 'Not Found'} / {'detail': 'Bad Request'}) instead of the framework default
+ * serializer, app-wide, without reflecting caller-controlled text.
  *
- * Every row here is stateless (Mock: None, no SQL, no teardown), so no test seeds or cleans
- * anything: each one only calls the deployed QA stack through the `api` fixture.
+ * Every row here is stateless (Mock: None, Teardown: None) — no seed, no DB, no stub.
  */
-test.describe("ONODE-68 — constant not-found handler", () => {
+test.describe("ONODE-68 — constant not-found / bad-request bodies", () => {
   test("TC-001 unmatched route GET /nope answers 404 with the fixed constant body", async ({ api }) => {
     const res = await api.get("/nope");
     expect(res.status()).toBe(404);
@@ -85,6 +83,33 @@ test.describe("ONODE-68 — constant not-found handler", () => {
     });
     expect(res.status()).toBe(404);
     expect(res.headers()["content-type"]).toContain("application/json");
+    expect(await res.json()).toEqual({ detail: "Not Found" });
+  });
+
+  test("TC-012 a parser-level rejection answers the fixed constant 400 body", async ({ api }) => {
+    const res = await api.get("/nope", { headers: { "Content-Length": "xyz" } });
+    expect(res.status()).toBe(400);
+    expect(res.headers()["content-type"]).toContain("application/json");
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body).toEqual({ detail: "Bad Request" });
+    expect(body).not.toHaveProperty("message");
+    expect(body).not.toHaveProperty("error");
+    expect(body).not.toHaveProperty("statusCode");
+  });
+
+  test("TC-013 the parser-level 400 applies app-wide to a matched route too", async ({ api }) => {
+    const res = await api.get("/health", { headers: { "Content-Length": "-1" } });
+    expect(res.status()).toBe(400);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body).toEqual({ detail: "Bad Request" });
+    expect(body).not.toHaveProperty("message");
+    expect(body).not.toHaveProperty("error");
+    expect(body).not.toHaveProperty("statusCode");
+  });
+
+  test("TC-014 a well-formed Content-Length leaves the not-found path unaffected", async ({ api }) => {
+    const res = await api.get("/nope", { headers: { "Content-Length": "0" } });
+    expect(res.status()).toBe(404);
     expect(await res.json()).toEqual({ detail: "Not Found" });
   });
 });
