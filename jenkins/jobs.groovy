@@ -9,8 +9,9 @@
 // project. A job removed here is NOT deleted by the seed job (removedJobAction = ignore), so a
 // person deletes it in Jenkins after the merge.
 //
-// One entry per project. `script` is the stack's Jenkinsfile (Jenkinsfile = Robot,
-// jenkins/playwright.Jenkinsfile = Playwright); `params` are the job's build parameters, each
+// One entry per job. `script` is the stack's Jenkinsfile (Jenkinsfile = Robot,
+// jenkins/playwright.Jenkinsfile = Playwright, jenkins/perf.Jenkinsfile = the k6 budgets, which runs
+// on the Olympus host node); `cron` the timer (default nightly at 5); `params` the build parameters, each
 // with the default a timer or a remote trigger runs with. `token` is the job's "Trigger builds
 // remotely" token — not a secret credential, it only queues that one job on this Jenkins
 // (Olympus's tools/trigger_jenkins uses it).
@@ -22,6 +23,17 @@ def projects = [
      script     : 'jenkins/playwright.Jenkinsfile',
      params     : [SERVICE: ['node_demo', 'folder under tests/ with the suite\'s config']],
      token      : 'onode-trigger-4c1e'],
+    // every card's k6 script (tests/node_demo/perf/*.k6.js) re-measured against the perf stack, on
+    // the Olympus host node — jenkins/perf.Jenkinsfile says why it is not in the container
+    [name       : 'Olympus-ONODE-Perf',
+     description: 'ONODE performance budgets: every card\'s k6 script on main, re-measured against ' +
+                  'onode_perf (:8026) on the Olympus host node; each run kept in Postgres perf_runs ' +
+                  '(Grafana: Performance Budgets) and the Apollo KB.',
+     script     : 'jenkins/perf.Jenkinsfile',
+     params     : [PROJECT: ['ONODE', 'Jira project key the scripts belong to'],
+                   SERVICE: ['node_demo', 'folder under tests/ whose perf/ holds the k6 scripts']],
+     cron       : 'H 3 * * *',       // after the security nightly (2), before the functional one (5)
+     token      : 'onode-perf-trigger-7d2a'],
 ]
 
 projects.each { p ->
@@ -33,7 +45,7 @@ projects.each { p ->
         properties {
             pipelineTriggers {
                 triggers {
-                    cron { spec('H 5 * * *') }     // nightly
+                    cron { spec(p.cron ?: 'H 5 * * *') }     // nightly
                 }
             }
         }
