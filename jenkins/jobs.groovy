@@ -31,9 +31,23 @@ def projects = [
                   '(Grafana: Performance Budgets) and the Apollo KB.',
      script     : 'jenkins/perf.Jenkinsfile',
      params     : [PROJECT: ['ONODE', 'Jira project key the scripts belong to'],
-                   SERVICE: ['node_demo', 'folder under tests/ whose perf/ holds the k6 scripts']],
+                   SERVICE: ['node_demo', 'folder under tests/ whose perf/ holds the k6 scripts'],
+                   PROFILE: ['nightly', 'budget,stress,load — the budgets, the capacity, and 80% of the approved capacity']],
      cron       : 'H 3 * * *',       // after the security nightly (2), before the functional one (5)
      token      : 'onode-perf-trigger-7d2a'],
+    // the long load profiles, once a week: endurance (50% of the approved capacity for 30 min per
+    // endpoint, judged on drift) and spike (150%, judged on recovery). Sunday just after midnight, so
+    // its hour-plus hold of the machine meets neither the security nightly (2) nor the perf one (3).
+    [name       : 'Olympus-ONODE-Perf-Weekly',
+     description: 'ONODE endurance + spike: every card\'s k6 script driven at a share of the capacity a ' +
+                  'person approved (python -m tools.perf_baseline), on the Olympus host node; kept in ' +
+                  'Postgres perf_runs (Grafana: Performance Budgets) and the Apollo KB.',
+     script     : 'jenkins/perf.Jenkinsfile',
+     params     : [PROJECT: ['ONODE', 'Jira project key the scripts belong to'],
+                   SERVICE: ['node_demo', 'folder under tests/ whose perf/ holds the k6 scripts'],
+                   PROFILE: ['weekly', 'endurance,spike']],
+     cron       : 'H 0 * * 0',
+     token      : 'onode-perf-weekly-trigger-3b9e'],
 ]
 
 projects.each { p ->
