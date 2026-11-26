@@ -13,6 +13,11 @@
 //   - the project's perf stack (environments.perf in .olympus/project.json)
 //   - every run kept: logs/perf/runs.jsonl, Postgres perf_runs (Grafana), the KB (Apollo)
 //   - JUnit: one test per budget threshold, failed when crossed or when it measured nothing
+//   - PROFILE (26 Nov 2026): `budget` = the card's own VUs and thresholds; `stress` = the arrival rate
+//     stepped up until the budget breaks (the capacity, judged against the baseline a person approved
+//     with `python -m tools.perf_baseline`); `load` / `endurance` / `spike` = 80% / 50% / 150% of that
+//     baseline. `nightly` = budget,stress,load · `weekly` = endurance,spike. A stress with no approved
+//     baseline is a failed test that says how to approve it; the profiles made from it are skipped.
 // Exit codes: 0 every budget held · 3 a budget crossed (UNSTABLE via JUnit) · 2 could not measure.
 
 pipeline {
@@ -22,11 +27,13 @@ pipeline {
         string(name: 'PROJECT', defaultValue: 'ONODE', description: 'Jira project key the scripts belong to')
         string(name: 'SERVICE', defaultValue: 'node_demo',
                description: 'folder under tests/ whose perf/ holds the k6 scripts (node_demo = ONODE)')
+        string(name: 'PROFILE', defaultValue: 'nightly',
+               description: 'budget · stress · load · endurance · spike · nightly (budget,stress,load) · weekly (endurance,spike)')
     }
 
     options {
         timestamps()
-        timeout(time: 90, unit: 'MINUTES')    // the exclusive lock alone may wait 30
+        timeout(time: 180, unit: 'MINUTES')   // weekly: 2 × 30 min endurance + spikes, and the lock may wait
         disableConcurrentBuilds()
     }
 
@@ -51,7 +58,7 @@ set PYTHONIOENCODING=utf-8
 if exist "%WORKSPACE%\\results\\perf" rmdir /s /q "%WORKSPACE%\\results\\perf"
 cd /d "%OLYMPUS_HOME%"
 ".venv\\Scripts\\python.exe" -m tools.run_perf %PROJECT% --qa-dir "%WORKSPACE%" --service %SERVICE% ^
-  --junit "%WORKSPACE%\\results\\perf\\junit.xml" --source jenkins-perf-%BUILD_NUMBER%
+  --junit "%WORKSPACE%\\results\\perf\\junit.xml" --source jenkins-perf-%BUILD_NUMBER% --profile %PROFILE%
 ''')
                     if (rc == 2) {
                         error("run_perf could not measure (exit 2) — see the log: no script, no perf target, k6 missing, or the lock was not had")
