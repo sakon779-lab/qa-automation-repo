@@ -1,0 +1,22 @@
+# ONODE-80 TC-001 — B8: the glob dependency bump changes no behaviour.
+#
+# The row's proof is NOT a UI interaction: it is (a) the vuln scan JSON
+# {'advisory_present': False, 'all_glob_fixed': True} and (b) the repo's declared
+# checks passing with the same result as origin/main. The row names no Steps that
+# touch the app and no `Screen shows` / `Screen hides` texts, so this flow proves
+# the only thing the mobile UI can prove for B8: the app still launches and renders
+# unchanged after the bump (no regression introduced by the dependency move).
+# The scan + gate parity are asserted by the run itself (run_project_checks) and
+# reported alongside this flow.
+#
+# Waits on the app's title, not on a particular screen's testID: the first screen
+# changes as cards land (ONODE-14 made it the quote screen), the title stays.
+appId: com.olympus.onode
+name: ONODE-80 TC-001 dependency bump changes no behaviour (app still launches and renders)
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "ONODE Parking"
+    timeout: 20000
+- takeScreenshot: ONODE-80-TC-001
